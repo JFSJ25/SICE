@@ -79,8 +79,13 @@ export default function Grupos() {
         )
       )
       const notas = new Map()
+      const totalEstudiantes = gs.reduce(
+        (total, grupo) => total + grupo.miembros.length,
+        0
+      )
       gs.forEach(g => {
         const promedios = promediosPorGrupo.get(g.id)
+        const coevaluacionesEsperadas = totalEstudiantes - g.miembros.length
         g.miembros.forEach(m => {
           const calif = mapa.get(m.usuarioId)
           const esEvaluador = m.rolGrupo === 'evaluador'
@@ -94,6 +99,8 @@ export default function Grupos() {
           notas.set(m.usuarioId, {
             docente,
             coevaluacion,
+            coevaluado:
+              promedio !== null && promedio.cantidad >= coevaluacionesEsperadas,
             final:
               docente !== null && coevaluacion !== null
                 ? docente * 0.7 + coevaluacion * 0.3
@@ -204,8 +211,7 @@ function CardGrupo({ grupo, mapaCalif, mapaNotas, onCalificar }) {
         {grupo.miembros.map(m => {
           const calif = mapaCalif.get(m.usuarioId)
           const nota = mapaNotas.get(m.usuarioId)
-          const coevaluado =
-            nota?.coevaluacion !== null && nota?.coevaluacion !== undefined
+          const coevaluado = nota?.coevaluado === true
           const esEval = m.rolGrupo === 'evaluador'
           const rolLabel = esEval ? 'Evaluador' : 'Expositor'
           return (

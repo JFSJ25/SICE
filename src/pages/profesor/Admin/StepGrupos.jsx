@@ -4,6 +4,8 @@ import {
   obtenerGruposBase,
   obtenerHemisemestres,
   crearGrupo,
+  eliminarGrupo,
+  agregarIntegranteGrupo,
   moverIntegrante,
   actualizarTemaGrupo,
   actualizarRolesGrupo
@@ -22,6 +24,8 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
+import PersonAddIcon from '@mui/icons-material/PersonAdd'
+import DeleteIcon from '@mui/icons-material/Delete'
 import SaveIcon from '@mui/icons-material/Save'
 
 export default function StepGrupos({
@@ -38,10 +42,21 @@ export default function StepGrupos({
   const [modoEditar, setModoEditar] = useState(null) // grupoId del grupo en edición de tema
   const [modoEditarRoles, setModoEditarRoles] = useState(null)
   const [modoMover, setModoMover] = useState(null) // { usuarioId, grupoOrigenId }
+  const [modoAgregar, setModoAgregar] = useState(null)
+  const [modoEdicion, setModoEdicion] = useState(false)
 
   useEffect(() => {
     cargar()
   }, [paraleloId])
+
+  useEffect(() => {
+    if (!modoEdicion) {
+      setModoEditar(null)
+      setModoEditarRoles(null)
+      setModoMover(null)
+      setModoAgregar(null)
+    }
+  }, [modoEdicion])
 
   async function seleccionarParalelo(id) {
     try {
@@ -112,21 +127,60 @@ export default function StepGrupos({
       {/* Lista de grupos existentes */}
       {grupos.length > 0 && (
         <div>
-          <h3 className="mb-3">Grupos creados</h3>
+          <div className="sticky top-[2.5rem] md:top-0 z-30 -mx-5 px-5 py-3 mb-3 border-b border-black/[0.08] bg-[#f8fafd]/95 backdrop-blur-sm sm:-mx-10 sm:px-10">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <h3>Grupos creados</h3>
+              <label className="inline-flex items-center gap-2 self-start sm:self-auto cursor-pointer text-sm font-semibold text-ink-mid">
+                <input
+                  type="checkbox"
+                  checked={modoEdicion}
+                  onChange={e => setModoEdicion(e.target.checked)}
+                  className="w-4 h-4 accent-gold"
+                />
+                Modo edición
+              </label>
+            </div>
+          </div>
           <div className="flex flex-col gap-3">
             {grupos.map(g => (
               <TarjetaGrupo
                 key={g.id}
                 grupo={g}
                 grupos={grupos}
+                estudiantesDisponibles={sinGrupo}
                 hemisemestres={hemisemestres}
                 modoEditar={modoEditar === g.id}
                 modoEditarRoles={modoEditarRoles === g.id}
+                modoAgregar={modoAgregar === g.id}
                 modoMover={modoMover?.grupoOrigenId === g.id ? modoMover : null}
+                modoEdicion={modoEdicion}
                 onEditarTema={() => setModoEditar(g.id)}
                 onCerrarEditar={() => setModoEditar(null)}
                 onEditarRoles={() => setModoEditarRoles(g.id)}
                 onCerrarEditarRoles={() => setModoEditarRoles(null)}
+                onIniciarAgregar={() => setModoAgregar(g.id)}
+                onCerrarAgregar={() => setModoAgregar(null)}
+                onDeshacer={async () => {
+                  try {
+                    await eliminarGrupo(g.id)
+                    await cargar()
+                  } catch (e) {
+                    setError(e.message)
+                  }
+                }}
+                onAgregar={async (usuarioId, rolGrupo) => {
+                  try {
+                    await agregarIntegranteGrupo({
+                      grupoId: g.id,
+                      usuarioId,
+                      rolGrupo
+                    })
+                    setModoAgregar(null)
+                    await cargar()
+                  } catch (e) {
+                    setError(e.message)
+                  }
+                }}
                 onIniciarMover={usuarioId =>
                   setModoMover({ usuarioId, grupoOrigenId: g.id })
                 }
@@ -271,13 +325,13 @@ function BuilderNuevoGrupo({
         type="button"
         className={`${
           desplegado ? 'mb-4' : ''
-        } first-letter:flex w-full items-center gap-2 text-left`}
+        } flex w-full items-center gap-2 text-left`}
         onClick={() => setDesplegado(prev => !prev)}
         aria-expanded={desplegado}
       >
         <AddIcon className="w-5 h-5" />
         <span className="font-semibold">Crear grupo {siguienteNumero}</span>
-        <span className="text-xs font-bold text-ink-soft ml-4">
+        <span className="text-xs font-bold text-ink-soft ml-3">
           Estudiantes sin grupo: {sinGrupo.length}
         </span>
       </button>
@@ -387,14 +441,21 @@ function BuilderNuevoGrupo({
 function TarjetaGrupo({
   grupo,
   grupos,
+  estudiantesDisponibles,
   hemisemestres,
   modoEditar,
   modoEditarRoles,
   modoMover,
+  modoAgregar,
+  modoEdicion,
   onEditarTema,
   onCerrarEditar,
   onEditarRoles,
   onCerrarEditarRoles,
+  onIniciarAgregar,
+  onCerrarAgregar,
+  onDeshacer,
+  onAgregar,
   onIniciarMover,
   onCancelarMover,
   onMoverA,
@@ -410,6 +471,12 @@ function TarjetaGrupo({
   const [roles, setRoles] = useState({})
   const [guardandoRoles, setGuardandoRoles] = useState(false)
   const [errorRoles, setErrorRoles] = useState('')
+  const [estudianteAgregar, setEstudianteAgregar] = useState('')
+  const [rolAgregar, setRolAgregar] = useState('expositor')
+  const [guardandoAgregar, setGuardandoAgregar] = useState(false)
+  const [errorAgregar, setErrorAgregar] = useState('')
+  const [confirmandoDeshacer, setConfirmandoDeshacer] = useState(false)
+  const [guardandoDeshacer, setGuardandoDeshacer] = useState(false)
 
   // Para el diálogo de mover
   const [grupoDestino, setGrupoDestino] = useState('')
@@ -425,6 +492,14 @@ function TarjetaGrupo({
     setNuevoEvaluadorOrigenId('')
     setErrorMovimiento('')
   }, [modoMover?.usuarioId])
+
+  useEffect(() => {
+    if (modoAgregar) {
+      setEstudianteAgregar('')
+      setRolAgregar('expositor')
+      setErrorAgregar('')
+    }
+  }, [modoAgregar])
 
   useEffect(() => {
     if (modoEditarRoles) {
@@ -491,6 +566,32 @@ function TarjetaGrupo({
     }
   }
 
+  async function handleAgregar() {
+    if (!estudianteAgregar) {
+      setErrorAgregar('Selecciona un estudiante.')
+      return
+    }
+    setGuardandoAgregar(true)
+    setErrorAgregar('')
+    try {
+      await onAgregar(estudianteAgregar, rolAgregar)
+    } catch (e) {
+      setErrorAgregar(e.message)
+    } finally {
+      setGuardandoAgregar(false)
+    }
+  }
+
+  async function handleDeshacer() {
+    setGuardandoDeshacer(true)
+    try {
+      await onDeshacer()
+    } finally {
+      setGuardandoDeshacer(false)
+      setConfirmandoDeshacer(false)
+    }
+  }
+
   const gruposDestino = grupos.filter(g => g.id !== grupo.id)
   const grupoDestinoSeleccionado = gruposDestino.find(
     g => g.id === grupoDestino
@@ -548,15 +649,150 @@ function TarjetaGrupo({
         <p className="text-xs font-bold text-sice-green">
           Grupo {grupo.numero}
         </p>
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="ghost" onClick={onEditarTema}>
-            <EditIcon className="w-4 h-4" /> Editar temas
-          </Button>
-          <Button size="sm" variant="ghost" onClick={onEditarRoles}>
-            <EditIcon className="w-4 h-4" /> Editar roles
-          </Button>
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+          {modoEdicion && estudiantesDisponibles.length > 0 && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="w-full sm:w-auto"
+              onClick={onIniciarAgregar}
+            >
+              <PersonAddIcon className="w-4 h-4" /> Añadir
+            </Button>
+          )}
+          {modoEdicion && (
+            <>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="w-full sm:w-auto"
+                onClick={onEditarTema}
+              >
+                <EditIcon className="w-4 h-4" /> Editar temas
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="w-full sm:w-auto"
+                onClick={onEditarRoles}
+              >
+                <EditIcon className="w-4 h-4" /> Editar roles
+              </Button>
+              <Button
+                size="sm"
+                variant="danger"
+                className="w-full sm:w-auto"
+                onClick={() => setConfirmandoDeshacer(true)}
+              >
+                <DeleteIcon className="w-4 h-4" /> Deshacer
+              </Button>
+            </>
+          )}
         </div>
       </div>
+
+      {confirmandoDeshacer && (
+        <div className="mb-4 p-3 bg-sice-red-soft rounded-sm border border-sice-red/25">
+          <p className="text-sm font-semibold text-sice-red mb-1">
+            ¿Deshacer el Grupo {grupo.numero}?
+          </p>
+          <p className="text-xs text-ink-mid leading-relaxed">
+            Sus estudiantes volverán a la lista de estudiantes sin grupo y se
+            eliminarán sus temas, calificaciones y coevaluaciones asociadas.
+          </p>
+          <div className="flex gap-2 mt-3 justify-end">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setConfirmandoDeshacer(false)}
+              disabled={guardandoDeshacer}
+            >
+              Cancelar
+            </Button>
+            <Button
+              size="sm"
+              variant="danger"
+              onClick={handleDeshacer}
+              disabled={guardandoDeshacer}
+            >
+              {guardandoDeshacer ? (
+                <>
+                  <Spinner className="w-4 h-4" /> Deshaciendo…
+                </>
+              ) : (
+                <>
+                  <DeleteIcon className="w-4 h-4" /> Confirmar
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {modoAgregar && (
+        <div className="mb-4 p-3 bg-gold-soft rounded-sm border border-gold/40">
+          <p className="text-xs font-semibold text-ink-mid mb-3">
+            Añadir estudiante al grupo
+          </p>
+          {errorAgregar && <Aviso variant="red">{errorAgregar}</Aviso>}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="flex-1">
+              <label className="text-xs text-ink-soft block mb-1">
+                Estudiante
+              </label>
+              <Select
+                value={estudianteAgregar}
+                onChange={e => {
+                  setEstudianteAgregar(e.target.value)
+                  setErrorAgregar('')
+                }}
+              >
+                <option value="">— Seleccionar —</option>
+                {estudiantesDisponibles.map(est => (
+                  <option key={est.usuarioId} value={est.usuarioId}>
+                    {est.nombre}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div className="sm:w-36">
+              <label className="text-xs text-ink-soft block mb-1">Rol</label>
+              <Select
+                value={rolAgregar}
+                onChange={e => setRolAgregar(e.target.value)}
+              >
+                <option value="expositor">Expositor</option>
+                <option value="evaluador">Evaluador</option>
+              </Select>
+            </div>
+            <div className="flex gap-2 sm:pb-0">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onCerrarAgregar}
+                disabled={guardandoAgregar}
+              >
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleAgregar}
+                disabled={guardandoAgregar || !estudianteAgregar}
+              >
+                {guardandoAgregar ? (
+                  <>
+                    <Spinner className="w-4 h-4" /> Añadiendo…
+                  </>
+                ) : (
+                  <>
+                    <PersonAddIcon className="w-4 h-4" /> Añadir
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edición de temas */}
       {modoEditar && (
@@ -678,23 +914,25 @@ function TarjetaGrupo({
         {grupo.miembros.map(m => (
           <li
             key={m.usuarioId}
-            className="flex flex-col gap-2 bg-surface rounded-sm px-3 py-2 sm:flex-row sm:flex-wrap sm:items-center"
+            className="flex flex-wrap items-center gap-2 bg-surface rounded-sm px-3 py-2"
           >
-            <span className="min-w-0 w-full sm:flex-1 sm:min-w-[140px] text-sm font-medium break-words">
+            <span className="w-full min-w-0 text-sm font-medium break-words sm:w-auto sm:flex-1 sm:min-w-[140px]">
               {m.nombre}
             </span>
-            <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+            <div className="ml-auto flex flex-wrap items-center gap-2">
               <Badge variant={m.rolGrupo === 'evaluador' ? 'ok' : 'info'}>
                 {m.rolGrupo === 'evaluador' ? 'Evaluador' : 'Expositor'}
               </Badge>
               {m.lider && <Badge variant="pending">Líder</Badge>}
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => onIniciarMover(m.usuarioId)}
-              >
-                <SwapHorizIcon className="w-4 h-4" /> Mover
-              </Button>
+              {modoEdicion && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => onIniciarMover(m.usuarioId)}
+                >
+                  <SwapHorizIcon className="w-4 h-4" /> Mover
+                </Button>
+              )}
             </div>
           </li>
         ))}

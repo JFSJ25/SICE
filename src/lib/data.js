@@ -272,6 +272,14 @@ export async function crearGrupo({
   return grupo
 }
 
+// Elimina un grupo y devuelve sus estudiantes a la lista sin grupo.
+// Las relaciones dependientes (temas, miembros y calificaciones) se eliminan
+// mediante las reglas on delete cascade del esquema.
+export async function eliminarGrupo(grupoId) {
+  const { error } = await supabase.from('grupos').delete().eq('id', grupoId)
+  if (error) throw error
+}
+
 // Actualiza el tema de un grupo en UN hemisemestre específico.
 export async function actualizarTemaGrupo(grupoId, hemisemestreId, tema) {
   const { error } = await supabase
@@ -421,6 +429,49 @@ export async function moverIntegrante({
     lider: false
   })
   if (errIns) throw errIns
+}
+
+// Añade un estudiante matriculado y actualmente sin grupo a un grupo existente.
+export async function agregarIntegranteGrupo({
+  grupoId,
+  usuarioId,
+  rolGrupo = 'expositor'
+}) {
+  const [
+    { data: miembrosActuales, error: errMiembros },
+    { data: grupo, error: errGrupo }
+  ] = await Promise.all([
+    supabase
+      .from('grupo_miembros')
+      .select('usuario_id, rol_grupo, lider')
+      .eq('grupo_id', grupoId),
+    supabase.from('grupos').select('max_integrantes').eq('id', grupoId).single()
+  ])
+  if (errMiembros) throw errMiembros
+  if (errGrupo) throw errGrupo
+
+  if (miembrosActuales.length >= grupo.max_integrantes) {
+    throw new Error('El grupo ya alcanzó el máximo de integrantes.')
+  }
+
+  if (miembrosActuales.some(m => m.usuario_id === usuarioId)) {
+    throw new Error('El estudiante ya pertenece a este grupo.')
+  }
+
+  const miembros = miembrosActuales.map(m => ({
+    rolGrupo: m.rol_grupo,
+    lider: m.lider
+  }))
+  miembros.push({ rolGrupo, lider: false })
+  validarMiembrosGrupo(miembros)
+
+  const { error } = await supabase.from('grupo_miembros').insert({
+    grupo_id: grupoId,
+    usuario_id: usuarioId,
+    rol_grupo: rolGrupo,
+    lider: false
+  })
+  if (error) throw error
 }
 
 // Estudiantes del paralelo sin grupo asignado (para el builder).
