@@ -64,11 +64,11 @@ export default function Notas() {
 
           let final = null
           if (docSobre100 !== null && coevSobre100 !== null) {
-            final = docSobre100 * PESO_PROF + coevSobre100 * PESO_COEV
+            final = (docSobre100 * PESO_PROF + coevSobre100 * PESO_COEV) / 10
           } else if (docSobre100 !== null) {
-            final = docSobre100
+            final = (docSobre100 * PESO_PROF) / 10
           } else if (coevSobre100 !== null) {
-            final = coevSobre100
+            final = (coevSobre100 * PESO_COEV) / 10
           }
 
           return {
@@ -137,7 +137,7 @@ export default function Notas() {
                   valor={coevSobre100}
                 />
 
-                <div className="mt-3 pt-3 border-t border-black/10 flex justify-between items-baseline">
+                <div className="mt-3 pt-3 border-black/10 flex justify-between items-baseline">
                   <span className="text-sm font-semibold">
                     Nota final estimada
                   </span>
@@ -146,7 +146,7 @@ export default function Notas() {
                   >
                     {final !== null ? final.toFixed(1) : '—'}
                     <span className="font-body text-xs text-ink-soft font-normal ml-1">
-                      / 100
+                      / 10
                     </span>
                   </span>
                 </div>
