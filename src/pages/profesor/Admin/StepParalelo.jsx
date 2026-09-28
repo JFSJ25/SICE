@@ -30,8 +30,9 @@ export function SelectorParalelo({ paralelos, value, onChange }) {
     <Campo label="Materia - paralelo">
       <Select value={value ?? ''} onChange={e => onChange(e.target.value)}>
         {paralelos.map(p => (
-          <option key={p.id} value={p.id}>
-            {p.materiaNombre} - Paralelo {p.codigo} · {p.periodoNombre}
+          <option key={p.id ?? p.paraleloId} value={p.id ?? p.paraleloId}>
+            {p.etiqueta ??
+              `${p.materiaNombre} - Paralelo ${p.codigo} · ${p.periodoNombre}`}
           </option>
         ))}
       </Select>
@@ -42,7 +43,8 @@ export function SelectorParalelo({ paralelos, value, onChange }) {
 export default function StepParalelo({
   onAvanzar,
   onParaleloSeleccionado,
-  onParalelosCargados
+  onParalelosCargados,
+  paraleloInicialId
 }) {
   const { perfil } = useAuth()
 
@@ -78,7 +80,9 @@ export default function StepParalelo({
       onParalelosCargados(paralelosProfesor)
       setModoNuevo(paralelosProfesor.length === 0)
       if (paralelosProfesor.length > 0) {
-        const primero = paralelosProfesor[0]
+        const primero =
+          paralelosProfesor.find(p => p.id === paraleloInicialId) ??
+          paralelosProfesor[0]
         setParaleloSeleccionado(primero.id)
         const hs = await obtenerHemisemestres(primero.id)
         onParaleloSeleccionado({ paraleloId: primero.id, hemisemestres: hs })

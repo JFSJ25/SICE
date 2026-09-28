@@ -101,6 +101,9 @@ export default function StepEstudiantes({
   const [error, setError] = useState('')
 
   async function seleccionarParalelo(id) {
+    setArchivo(null)
+    setResultado(null)
+    setError('')
     try {
       const hemisemestres = await obtenerHemisemestres(id)
       onParaleloSeleccionado({ paraleloId: id, hemisemestres })
@@ -204,6 +207,7 @@ export default function StepEstudiantes({
           </div>
 
           <input
+            key={paraleloId}
             type="file"
             accept=".csv,text/csv"
             onChange={e => setArchivo(e.target.files[0] ?? null)}
@@ -230,9 +234,9 @@ export default function StepEstudiantes({
       ) : (
         <div className="flex flex-col gap-4">
           <Aviso variant="green">
-            <CheckCircleIcon className="w-4 h-4 inline align-text-bottom" />{' '}
+            <CheckCircleIcon className="w-4 h-4 inline align-text-bottom mr-1" />{' '}
             {resultado.creados} cuenta{resultado.creados !== 1 ? 's' : ''}{' '}
-            creada{resultado.creados !== 1 ? 's' : ''} y matriculada
+            matriculada
             {resultado.creados !== 1 ? 's' : ''}. Se descargó{' '}
             <strong>credenciales.csv</strong> automáticamente.
           </Aviso>
@@ -253,11 +257,11 @@ export default function StepEstudiantes({
           )}
 
           <button
-            className="text-xs text-sice-green font-semibold hover:underline self-start"
+            className="text-xs flex items-center text-sice-green font-semibold hover:underline self-start"
             onClick={() => descargarCSV(resultado.credenciales)}
           >
             <DownloadIcon className="w-4 h-4 inline align-text-bottom" /> Volver
-            a descargar credenciales.csv
+            a descargar las credenciales
           </button>
 
           <div className="flex gap-3 justify-between">

@@ -88,9 +88,9 @@ export function Aviso({ children, variant = 'amber' }) {
   }
   return (
     <div
-      className={`border rounded-sm px-4 py-3 text-sm leading-relaxed mb-4 ${variants[variant]}`}
+      className={`border flex items-center rounded-sm px-4 py-3 text-sm leading-relaxed mb-4 ${variants[variant]}`}
     >
-      {children}
+      <span>{children}</span>
     </div>
   )
 }

@@ -22,6 +22,7 @@ import LogoutIcon from '@mui/icons-material/Logout'
 // El Shell expone el contexto activo y el hemisemestre activo
 // a las páginas hijas a través de props pasadas por Outlet context.
 // Las páginas los consumen con useOutletContext().
+const CLAVE_PARALELO_ACTIVO = 'sice-paralelo-activo'
 
 export default function Shell() {
   const { perfil } = useAuth()
@@ -48,9 +49,14 @@ export default function Shell() {
         const { paralelos: ps, contextoActivo } =
           await obtenerContextosProfesor(perfil.id)
         setParalelos(ps)
-        if (contextoActivo) {
-          setContexto(contextoActivo)
-          await cargarHemisemestres(contextoActivo.paraleloId)
+        const paraleloGuardado = localStorage.getItem(
+          `${CLAVE_PARALELO_ACTIVO}-${perfil.id}`
+        )
+        const contextoActivoPersistido =
+          ps.find(p => p.paraleloId === paraleloGuardado) ?? contextoActivo
+        if (contextoActivoPersistido) {
+          setContexto(contextoActivoPersistido)
+          await cargarHemisemestres(contextoActivoPersistido.paraleloId)
         } else {
           // Sin paralelos → ir a Admin
           navigate('/profesor/admin', { replace: true })
@@ -82,6 +88,10 @@ export default function Shell() {
   async function cambiarParalelo(paraleloId) {
     const ctx = paralelos.find(p => p.paraleloId === paraleloId)
     if (!ctx) return
+    localStorage.setItem(
+      `${CLAVE_PARALELO_ACTIVO}-${perfil.id}`,
+      ctx.paraleloId
+    )
     setContexto(ctx)
     await cargarHemisemestres(paraleloId)
     navigate('/profesor/grupos')
@@ -291,6 +301,7 @@ export default function Shell() {
             <Outlet
               context={{
                 contexto,
+                paralelos,
                 hemisemestreActivo,
                 hemisemestres,
                 recargarContexto: cargarContexto

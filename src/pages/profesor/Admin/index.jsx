@@ -1,20 +1,46 @@
 import { useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
-import { obtenerHemisemestres } from '../../../lib/data.js'
+import { useAuth } from '../../../context/AuthContext.jsx'
 import StepParalelo from './StepParalelo.jsx'
 import StepEstudiantes from './StepEstudiantes.jsx'
 import StepGrupos from './StepGrupos.jsx'
 import CheckIcon from '@mui/icons-material/Check'
 
 const PASOS = ['Paralelo', 'Estudiantes', 'Grupos']
+const CLAVE_PASO_ADMIN = 'sice-paso-admin'
 
 export default function Admin() {
-  const { recargarContexto } = useOutletContext()
+  const { perfil } = useAuth()
+  const {
+    contexto,
+    paralelos: paralelosGlobales,
+    hemisemestres: hemisemestresGlobales,
+    recargarContexto
+  } = useOutletContext()
 
-  const [pasoActual, setPasoActual] = useState(0)
-  const [paraleloId, setParaleloId] = useState(null)
-  const [paralelos, setParalelos] = useState([])
-  const [hemisemestres, setHemisemestres] = useState([])
+  const [pasoActual, setPasoActual] = useState(() => {
+    const guardado = Number(
+      localStorage.getItem(`${CLAVE_PASO_ADMIN}-${perfil?.id ?? ''}`)
+    )
+    return Number.isInteger(guardado) &&
+      guardado >= 0 &&
+      guardado < PASOS.length
+      ? guardado
+      : 0
+  })
+  const [paraleloId, setParaleloId] = useState(contexto?.paraleloId ?? null)
+  const [paralelos, setParalelos] = useState(paralelosGlobales ?? [])
+  const [hemisemestres, setHemisemestres] = useState(
+    hemisemestresGlobales ?? []
+  )
+
+  function guardarPaso(indice) {
+    setPasoActual(indice)
+    localStorage.setItem(
+      `${CLAVE_PASO_ADMIN}-${perfil?.id ?? ''}`,
+      String(indice)
+    )
+  }
 
   function actualizarParalelo(datos) {
     setParaleloId(datos.paraleloId)
@@ -26,16 +52,16 @@ export default function Admin() {
     if (pasoActual === 0) {
       actualizarParalelo(datos)
     }
-    setPasoActual(p => Math.min(p + 1, PASOS.length - 1))
+    guardarPaso(Math.min(pasoActual + 1, PASOS.length - 1))
   }
 
   function irAlPaso(indice) {
     if (indice > 0 && !paraleloId) return
-    setPasoActual(indice)
+    guardarPaso(indice)
   }
 
   function retroceder() {
-    setPasoActual(p => Math.max(p - 1, 0))
+    guardarPaso(Math.max(pasoActual - 1, 0))
   }
 
   return (
@@ -99,6 +125,7 @@ export default function Admin() {
           onAvanzar={avanzar}
           onParaleloSeleccionado={actualizarParalelo}
           onParalelosCargados={setParalelos}
+          paraleloInicialId={paraleloId}
         />
       )}
       {pasoActual === 1 && (
