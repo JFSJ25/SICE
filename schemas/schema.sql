@@ -50,6 +50,50 @@ create table public.matriculas (
   unique (paralelo_id, usuario_id)
 );
 
+-- Un estudiante solo puede tener una materia-paralelo por periodo académico.
+create or replace function public.validar_matricula_un_periodo()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  nuevo_periodo_id uuid;
+begin
+  select p.periodo_id
+    into nuevo_periodo_id
+    from public.paralelos p
+   where p.id = new.paralelo_id;
+
+  if nuevo_periodo_id is null then
+    raise exception 'El paralelo no tiene un periodo académico válido';
+  end if;
+
+  perform pg_advisory_xact_lock(
+    hashtextextended(new.usuario_id::text || ':' || nuevo_periodo_id::text, 0)
+  );
+
+  if exists (
+    select 1
+      from public.matriculas m
+      join public.paralelos p on p.id = m.paralelo_id
+     where m.usuario_id = new.usuario_id
+       and p.periodo_id = nuevo_periodo_id
+       and m.id is distinct from new.id
+  ) then
+    raise exception using
+      errcode = '23505',
+      message = 'El estudiante ya está matriculado en otra materia-paralelo de este periodo académico';
+  end if;
+
+  return new;
+end;
+$$;
+
+create trigger trg_matricula_un_periodo
+before insert or update of paralelo_id, usuario_id on public.matriculas
+for each row execute function public.validar_matricula_un_periodo();
+
 -- Siempre exactamente 2 por paralelo; se crean automáticamente via trigger.
 -- El profesor nunca los crea ni edita manualmente.
 create table public.hemisemestres (

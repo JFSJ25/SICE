@@ -511,7 +511,17 @@ export async function matricularEstudiantes(paraleloId, usuarioIds) {
     onConflict: 'paralelo_id,usuario_id',
     ignoreDuplicates: true
   })
-  if (error) throw error
+  if (error) {
+    if (
+      error.code === '23505' &&
+      error.message?.includes('periodo académico')
+    ) {
+      throw new Error(
+        'Uno o más estudiantes ya están matriculados en otra materia-paralelo de este periodo académico.'
+      )
+    }
+    throw error
+  }
 }
 
 // ---- Calificaciones del docente ----

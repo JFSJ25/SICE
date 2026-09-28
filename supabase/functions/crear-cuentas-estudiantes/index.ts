@@ -23,6 +23,25 @@ function generarPassword() {
   ).join('')
 }
 
+async function buscarUsuarioAuthPorEmail(adminClient: any, email: string) {
+  const perPage = 1000
+  for (let page = 1; ; page += 1) {
+    const { data, error } = await adminClient.auth.admin.listUsers({
+      page,
+      perPage
+    })
+    if (error) return { user: null, error }
+
+    const user = data.users.find(
+      (usuario: { email?: string }) => usuario.email?.toLowerCase() === email
+    )
+    if (user) return { user, error: null }
+    if (data.users.length < perPage) break
+  }
+
+  return { user: null, error: null }
+}
+
 Deno.serve(async request => {
   if (request.method === 'OPTIONS')
     return new Response('ok', { headers: corsHeaders })
@@ -101,6 +120,75 @@ Deno.serve(async request => {
       })
 
     if (cuentaError || !cuenta.user) {
+      const esCorreoExistente =
+        cuentaError?.code === 'email_exists' ||
+        cuentaError?.status === 422 ||
+        cuentaError?.message?.toLowerCase().includes('already registered')
+
+      if (esCorreoExistente) {
+        const { user, error: usuarioConsultaError } =
+          await buscarUsuarioAuthPorEmail(adminClient, email)
+
+        if (usuarioConsultaError) {
+          errores.push({ email, mensaje: usuarioConsultaError.message })
+          continue
+        }
+
+        if (user) {
+          const { data: perfilExistente, error: perfilConsultaError } =
+            await adminClient
+              .from('usuarios')
+              .select('id')
+              .eq('id', user.id)
+              .maybeSingle()
+
+          if (perfilConsultaError) {
+            errores.push({ email, mensaje: perfilConsultaError.message })
+            continue
+          }
+
+          const { error: passwordError } =
+            await adminClient.auth.admin.updateUserById(user.id, {
+              password,
+              user_metadata: { nombre_completo: nombre }
+            })
+
+          if (passwordError) {
+            errores.push({ email, mensaje: passwordError.message })
+            continue
+          }
+
+          const perfilError = perfilExistente
+            ? (
+                await adminClient
+                  .from('usuarios')
+                  .update({ nombre_completo: nombre })
+                  .eq('id', user.id)
+              ).error
+            : (
+                await adminClient.from('usuarios').insert({
+                  id: user.id,
+                  nombre_completo: nombre,
+                  email,
+                  rol_sistema: 'estudiante'
+                })
+              ).error
+
+          if (perfilError) {
+            errores.push({ email, mensaje: perfilError.message })
+            continue
+          }
+
+          creados.push({
+            id: user.id,
+            nombre_completo: nombre,
+            email,
+            password
+          })
+          continue
+        }
+      }
+
       errores.push({
         email,
         mensaje: cuentaError?.message ?? 'No se pudo crear la cuenta'
