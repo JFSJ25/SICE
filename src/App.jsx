@@ -15,6 +15,8 @@ import MiGrupo from './pages/estudiante/MiGrupo.jsx'
 import Coevaluar from './pages/estudiante/Coevaluar.jsx'
 import CoevaluarForm from './pages/estudiante/CoevaluarForm.jsx'
 import Notas from './pages/estudiante/Notas.jsx'
+import Cuenta from './pages/Cuenta.jsx'
+import Estudiantes from './pages/profesor/Estudiantes.jsx'
 
 // ---- Guardias de ruta ----
 
@@ -116,6 +118,16 @@ export default function App() {
                 </RequiereProfesor>
               }
             />
+            <Route
+              path="profesor/estudiantes"
+              element={
+                <RequiereProfesor>
+                  <Estudiantes />
+                </RequiereProfesor>
+              }
+            />
+
+            <Route path="cuenta" element={<Cuenta />} />
 
             {/* Estudiante */}
             <Route

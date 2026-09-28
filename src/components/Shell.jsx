@@ -15,6 +15,8 @@ import PersonIcon from '@mui/icons-material/Person'
 import FactCheckIcon from '@mui/icons-material/FactCheck'
 import GradeIcon from '@mui/icons-material/Grade'
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts'
+import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import LogoutIcon from '@mui/icons-material/Logout'
 
 // El Shell expone el contexto activo y el hemisemestre activo
@@ -99,6 +101,11 @@ export default function Shell() {
       to: '/profesor/pendientes',
       label: 'Pendientes',
       Icon: PendingActionsIcon
+    },
+    {
+      to: '/profesor/estudiantes',
+      label: 'Contraseñas',
+      Icon: ManageAccountsIcon
     }
   ]
   const navEstudiante = [
@@ -106,7 +113,10 @@ export default function Shell() {
     { to: '/estudiante/coevaluar', label: 'Coevaluar', Icon: FactCheckIcon },
     { to: '/estudiante/notas', label: 'Mis notas', Icon: GradeIcon }
   ]
-  const navItems = esStaff ? navProfesor : navEstudiante
+  const navItems = [
+    ...(esStaff ? navProfesor : navEstudiante),
+    { to: '/cuenta', label: 'Mi cuenta', Icon: AccountCircleIcon }
+  ]
 
   const rolTexto = esStaff
     ? 'Profesor'

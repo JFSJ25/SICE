@@ -1,13 +1,53 @@
 import { supabase } from './supabase.js'
 
 export async function iniciarSesion(email, password) {
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  })
   if (error) return { error: error.message }
   return { data }
 }
 
 export async function cerrarSesion() {
   await supabase.auth.signOut()
+}
+
+export async function cambiarPasswordPropia({
+  email,
+  passwordActual,
+  passwordNueva
+}) {
+  const { error: verificacionError } = await supabase.auth.signInWithPassword({
+    email,
+    password: passwordActual
+  })
+  if (verificacionError) throw new Error('La contraseña actual no es correcta.')
+
+  const { error } = await supabase.auth.updateUser({
+    password: passwordNueva
+  })
+  if (error) throw error
+}
+
+export async function obtenerEstudiantesAdministrables(busqueda = '') {
+  const { data, error } = await supabase.functions.invoke(
+    'listar-estudiantes',
+    {
+      body: { busqueda }
+    }
+  )
+  if (error) throw error
+  return data?.estudiantes ?? []
+}
+
+export async function restablecerPasswordEstudiante(estudianteId) {
+  const { data, error } = await supabase.functions.invoke(
+    'restablecer-password-estudiante',
+    { body: { estudianteId } }
+  )
+  if (error) throw error
+  return data
 }
 
 export async function obtenerSesionActual() {
@@ -37,13 +77,13 @@ export async function obtenerContextosProfesor(profesorId) {
   if (!data || data.length === 0) return { paralelos: [], contextoActivo: null }
 
   const paralelos = data.map(p => ({
-    paraleloId:    p.id,
-    codigo:        p.codigo,
-    materiaId:     p.materias?.id,
+    paraleloId: p.id,
+    codigo: p.codigo,
+    materiaId: p.materias?.id,
     materiaNombre: p.materias?.nombre ?? '—',
-    periodoId:     p.periodos?.id,
+    periodoId: p.periodos?.id,
     periodoNombre: p.periodos?.nombre ?? '—',
-    etiqueta:      `${p.materias?.nombre ?? '—'} ${p.codigo} · ${p.periodos?.nombre ?? '—'}`,
+    etiqueta: `${p.materias?.nombre ?? '—'} ${p.codigo} · ${p.periodos?.nombre ?? '—'}`
   }))
 
   return { paralelos, contextoActivo: paralelos[0] }
@@ -53,7 +93,9 @@ export async function obtenerContextosProfesor(profesorId) {
 export async function obtenerContextoEstudiante(usuarioId) {
   const { data, error } = await supabase
     .from('matriculas')
-    .select('paralelo_id, paralelos(codigo, materias(nombre), periodos(nombre))')
+    .select(
+      'paralelo_id, paralelos(codigo, materias(nombre), periodos(nombre))'
+    )
     .eq('usuario_id', usuarioId)
     .order('id', { ascending: false })
     .limit(1)
@@ -70,13 +112,13 @@ export async function obtenerContextoEstudiante(usuarioId) {
 
   const p = data.paralelos
   return {
-    paraleloId:    data.paralelo_id,
-    codigo:        p?.codigo ?? '',
+    paraleloId: data.paralelo_id,
+    codigo: p?.codigo ?? '',
     materiaNombre: p?.materias?.nombre ?? '—',
     periodoNombre: p?.periodos?.nombre ?? '—',
-    etiqueta:      `${p?.materias?.nombre ?? '—'} ${p?.codigo ?? ''} · ${p?.periodos?.nombre ?? '—'}`,
-    grupoId:       miembro?.grupo_id  ?? null,
-    rolGrupo:      miembro?.rol_grupo ?? null,
-    lider:         miembro?.lider     ?? false,
+    etiqueta: `${p?.materias?.nombre ?? '—'} ${p?.codigo ?? ''} · ${p?.periodos?.nombre ?? '—'}`,
+    grupoId: miembro?.grupo_id ?? null,
+    rolGrupo: miembro?.rol_grupo ?? null,
+    lider: miembro?.lider ?? false
   }
 }

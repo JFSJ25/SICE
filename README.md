@@ -80,6 +80,15 @@ supabase functions deploy crear-cuentas-estudiantes
 
 La función exige una sesión autenticada y solo permite operar a usuarios con rol `profesor` o `admin`.
 
+Las funciones `listar-estudiantes` y `restablecer-password-estudiante` permiten a un profesor o administrador buscar estudiantes y generar una contraseña temporal para recuperar su acceso. Despliégalas junto con la función de creación de cuentas:
+
+```bash
+supabase functions deploy listar-estudiantes
+supabase functions deploy restablecer-password-estudiante
+```
+
+La contraseña temporal se muestra una sola vez en la interfaz administrativa. El estudiante puede cambiarla desde `Mi cuenta` usando su contraseña actual.
+
 ## Roles
 
 - `admin`: administración general del sistema.
