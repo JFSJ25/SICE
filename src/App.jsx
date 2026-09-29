@@ -17,6 +17,7 @@ import CoevaluarForm from './pages/estudiante/CoevaluarForm.jsx'
 import Notas from './pages/estudiante/Notas.jsx'
 import Cuenta from './pages/Cuenta.jsx'
 import Estudiantes from './pages/profesor/Estudiantes.jsx'
+import AcercaDe from './pages/AcercaDe.jsx'
 
 // ---- Guardias de ruta ----
 
@@ -128,6 +129,7 @@ export default function App() {
             />
 
             <Route path="cuenta" element={<Cuenta />} />
+            <Route path="acerca-de" element={<AcercaDe />} />
 
             {/* Estudiante */}
             <Route

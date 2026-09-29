@@ -18,6 +18,7 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import LogoutIcon from '@mui/icons-material/Logout'
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 
 // El Shell expone el contexto activo y el hemisemestre activo
 // a las páginas hijas a través de props pasadas por Outlet context.
@@ -125,7 +126,8 @@ export default function Shell() {
   ]
   const navItems = [
     ...(esStaff ? navProfesor : navEstudiante),
-    { to: '/cuenta', label: 'Mi cuenta', Icon: AccountCircleIcon }
+    { to: '/cuenta', label: 'Mi cuenta', Icon: AccountCircleIcon },
+    { to: '/acerca-de', label: 'Acerca de', Icon: InfoOutlinedIcon }
   ]
 
   const rolTexto = esStaff
