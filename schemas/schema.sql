@@ -486,11 +486,11 @@ create policy "grupo_temas_write" on public.grupo_temas
   );
 
 -- configuracion_notas
-create policy "config_notas_select" on public.configuracion_notas
-  for select using (auth.role() = 'authenticated');
-create policy "config_notas_write" on public.configuracion_notas
-  for all using (public.puede_gestionar_paralelo(paralelo_id))
-  with check (public.puede_gestionar_paralelo(paralelo_id));
+-- create policy "config_notas_select" on public.configuracion_notas
+--   for select using (auth.role() = 'authenticated');
+-- create policy "config_notas_write" on public.configuracion_notas
+--   for all using (public.puede_gestionar_paralelo(paralelo_id))
+--   with check (public.puede_gestionar_paralelo(paralelo_id));
 
 -- rubricas y estructura
 create policy "rubricas_select"           on public.rubricas           for select using (auth.role() = 'authenticated');
