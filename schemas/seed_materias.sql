@@ -4,6 +4,6 @@
 -- ============================================================
 
 insert into public.materias (nombre, semestre) values
-  ('Redes Eléctricas',       '3ero'),
+  ('Redes Eléctricas',       '2do'),
   ('Sistemas Digitales',     '4to'),
   ('Plataformas de Hardware', '5to');

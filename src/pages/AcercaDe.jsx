@@ -67,7 +67,7 @@ export default function AcercaDe() {
       </div>
 
       <Panel>
-        <h2 className="text-lg mb-4">Equipo de desarrollo</h2>
+        <h2 className="text-lg mb-4">Colaboradores</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {equipo.map(({ nombre, rol, descripcion, Icon }) => (
             <div

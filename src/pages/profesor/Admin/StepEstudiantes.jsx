@@ -4,60 +4,17 @@ import {
   matricularEstudiantes,
   obtenerHemisemestres
 } from '../../../lib/data.js'
+import {
+  descargarTexto,
+  importarEstudiantes,
+  serializarCSVCredenciales
+} from '../../../lib/importarEstudiantes.js'
 import { Panel, Button, Aviso, Spinner } from '../../../components/ui/index.jsx'
 import { SelectorParalelo } from './StepParalelo.jsx'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import DownloadIcon from '@mui/icons-material/Download'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-
-// Parsea CSV mínimo: nombre_completo,correo (o nombre,email)
-function parsearCSV(texto) {
-  const lineas = texto.trim().split('\n').filter(Boolean)
-  if (lineas.length < 2)
-    throw new Error('El CSV debe tener al menos una fila de datos.')
-  const cabecera = lineas[0]
-    .toLowerCase()
-    .replace(/\r/g, '')
-    .split(',')
-    .map(h => h.trim())
-  const idxNombre = cabecera.findIndex(h => h.includes('nombre'))
-  const idxEmail = cabecera.findIndex(
-    h => h.includes('correo') || h.includes('email')
-  )
-  if (idxNombre === -1 || idxEmail === -1)
-    throw new Error(
-      'El CSV debe tener columnas "nombre_completo" y "correo" (o "email").'
-    )
-
-  return lineas
-    .slice(1)
-    .map(linea => {
-      const cols = linea.replace(/\r/g, '').split(',')
-      return {
-        nombre_completo: cols[idxNombre]?.trim() ?? '',
-        email: cols[idxEmail]?.trim() ?? ''
-      }
-    })
-    .filter(r => r.nombre_completo && r.email)
-}
-
-function descargarCSV(filas) {
-  const cabecera = 'nombre_completo,correo,contrasena'
-  const contenido = [
-    cabecera,
-    ...filas.map(
-      f => `${f.nombre_completo},${f.email},${f.password ?? f.contrasena ?? ''}`
-    )
-  ].join('\n')
-  const blob = new Blob([contenido], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = 'credenciales.csv'
-  a.click()
-  URL.revokeObjectURL(url)
-}
 
 function normalizarCuentas(data) {
   const filas = Array.isArray(data)
@@ -96,12 +53,14 @@ export default function StepEstudiantes({
   onRetroceder
 }) {
   const [archivo, setArchivo] = useState(null)
+  const [importacion, setImportacion] = useState(null)
   const [procesando, setProcesando] = useState(false)
   const [resultado, setResultado] = useState(null) // { creados, errores, credenciales }
   const [error, setError] = useState('')
 
   async function seleccionarParalelo(id) {
     setArchivo(null)
+    setImportacion(null)
     setResultado(null)
     setError('')
     try {
@@ -112,9 +71,30 @@ export default function StepEstudiantes({
     }
   }
 
+  async function seleccionarArchivo(nuevoArchivo) {
+    setArchivo(nuevoArchivo)
+    setImportacion(null)
+    setError('')
+    if (!nuevoArchivo) return
+
+    try {
+      setImportacion(await importarEstudiantes(nuevoArchivo))
+    } catch (e) {
+      setError(e.message ?? String(e))
+    }
+  }
+
   async function handleProcesar() {
     if (!archivo) {
-      setError('Selecciona un archivo CSV.')
+      setError('Selecciona un archivo Excel o CSV.')
+      return
+    }
+    if (!importacion) {
+      setError('El archivo no se pudo importar.')
+      return
+    }
+    if (importacion.errores.length > 0) {
+      setError('Corrige las filas reportadas antes de crear las cuentas.')
       return
     }
     setError('')
@@ -122,10 +102,7 @@ export default function StepEstudiantes({
     setResultado(null)
 
     try {
-      const texto = await archivo.text()
-      const estudiantes = parsearCSV(texto)
-      if (estudiantes.length === 0)
-        throw new Error('No se encontraron estudiantes en el CSV.')
+      const estudiantes = importacion.registros
 
       // Llamar a la Edge Function
       const { data, error: fnErr } = await supabase.functions.invoke(
@@ -159,7 +136,8 @@ export default function StepEstudiantes({
       setResultado(res)
 
       // Descarga automática del CSV de credenciales
-      if (creados.length > 0) descargarCSV(creados)
+      if (creados.length > 0)
+        descargarTexto('credenciales.csv', serializarCSVCredenciales(creados))
     } catch (e) {
       let mensaje = e.message ?? String(e)
       if (e?.context instanceof Response) {
@@ -186,7 +164,7 @@ export default function StepEstudiantes({
         />
       </div>
       <p className="text-sm text-ink-soft mb-5">
-        Sube un CSV con columnas{' '}
+        Sube un Excel o CSV con columnas{' '}
         <code className="bg-surface px-1 rounded text-xs">nombre_completo</code>{' '}
         y <code className="bg-surface px-1 rounded text-xs">correo</code>. Las
         cuentas se crean automáticamente y recibirás un archivo{' '}
@@ -209,10 +187,60 @@ export default function StepEstudiantes({
           <input
             key={paraleloId}
             type="file"
-            accept=".csv,text/csv"
-            onChange={e => setArchivo(e.target.files[0] ?? null)}
+            accept=".xls,.xlsx,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
+            onChange={e => seleccionarArchivo(e.target.files[0] ?? null)}
             className="text-sm text-ink-soft file:mr-3 file:py-1.5 file:px-3 file:rounded-sm file:border file:border-black/20 file:text-xs file:font-semibold file:bg-white hover:file:bg-surface"
           />
+
+          {archivo && importacion && (
+            <div className="flex flex-col gap-2 text-xs text-ink-soft">
+              <p>
+                <strong className="text-ink">{archivo.name}</strong> ·{' '}
+                {importacion.registros.length} estudiante
+                {importacion.registros.length !== 1 ? 's' : ''} listo
+                {importacion.registros.length !== 1 ? 's' : ''}
+              </p>
+              {importacion.errores.length > 0 && (
+                <Aviso variant="amber">
+                  {importacion.errores.length} fila
+                  {importacion.errores.length !== 1 ? 's' : ''} con problemas:
+                  <ul className="mt-1.5 list-disc list-inside">
+                    {importacion.errores.map((detalle, indice) => (
+                      <li key={indice}>
+                        Fila {detalle.fila}:{' '}
+                        {detalle.email ? `${detalle.email} — ` : ''}
+                        {detalle.mensaje}
+                      </li>
+                    ))}
+                  </ul>
+                </Aviso>
+              )}
+              <div className="flex flex-wrap gap-3 items-center">
+                <button
+                  type="button"
+                  className="text-xs text-sice-green font-semibold hover:underline"
+                  onClick={() =>
+                    descargarTexto(
+                      'estudiantes-normalizados.csv',
+                      importacion.csv
+                    )
+                  }
+                >
+                  Descargar CSV normalizado
+                </button>
+                {/* {importacion.registros.length > 0 && (
+                  <span>
+                    Primeros registros:{' '}
+                    {importacion.registros
+                      .slice(0, 3)
+                      .map(r => r.nombre_completo)
+                      .join(', ')}
+                    {importacion.registros.length > 3 ? '…' : ''}
+                  </span>
+                )} */}
+              </div>
+            </div>
+          )}
 
           <div className="flex gap-3 justify-between">
             <Button variant="outline" onClick={onRetroceder}>
@@ -258,7 +286,12 @@ export default function StepEstudiantes({
 
           <button
             className="text-xs flex items-center text-sice-green font-semibold hover:underline self-start"
-            onClick={() => descargarCSV(resultado.credenciales)}
+            onClick={() =>
+              descargarTexto(
+                'credenciales.csv',
+                serializarCSVCredenciales(resultado.credenciales)
+              )
+            }
           >
             <DownloadIcon className="w-4 h-4 inline align-text-bottom" /> Volver
             a descargar las credenciales
