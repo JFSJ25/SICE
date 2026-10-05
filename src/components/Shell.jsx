@@ -24,6 +24,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 // a las páginas hijas a través de props pasadas por Outlet context.
 // Las páginas los consumen con useOutletContext().
 const CLAVE_PARALELO_ACTIVO = 'sice-paralelo-activo'
+const CLAVE_HEMI_ACTIVO = 'sice-hemi-activo'
 
 export default function Shell() {
   const { perfil } = useAuth()
@@ -80,9 +81,15 @@ export default function Shell() {
   async function cargarHemisemestres(paraleloId) {
     const hs = await obtenerHemisemestres(paraleloId)
     setHemisemestres(hs)
+
+    const idGuardado = localStorage.getItem(
+      `${CLAVE_HEMI_ACTIVO}-${perfil.id}-${paraleloId}`
+    )
+
     setHemisemestreActivo(prev => {
       const sigue = hs.find(h => h.id === prev?.id)
-      return sigue ?? hs[0] ?? null
+      const guardado = hs.find(h => h.id === idGuardado)
+      return sigue ?? guardado ?? hs[0] ?? null
     })
   }
 
@@ -96,6 +103,16 @@ export default function Shell() {
     setContexto(ctx)
     await cargarHemisemestres(paraleloId)
     navigate('/profesor/grupos')
+  }
+
+  function seleccionarHemisemestre(hemi) {
+    setHemisemestreActivo(hemi)
+    if (contexto?.paraleloId) {
+      localStorage.setItem(
+        `${CLAVE_HEMI_ACTIVO}-${perfil.id}-${contexto.paraleloId}`,
+        hemi.id
+      )
+    }
   }
 
   async function handleLogout() {
@@ -219,7 +236,7 @@ export default function Shell() {
               {hemisemestres.map(h => (
                 <button
                   key={h.id}
-                  onClick={() => setHemisemestreActivo(h)}
+                  onClick={() => seleccionarHemisemestre(h)}
                   className={`
                     flex-1 text-xs font-semibold py-1.5 rounded-[4px] transition-colors
                     ${
