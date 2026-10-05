@@ -60,6 +60,20 @@ Ejecuta los scripts en Supabase Studio, en este orden:
 
 El esquema crea, entre otras, las tablas de usuarios, materias, periodos, paralelos, matrículas, hemisemestres, grupos, miembros, temas, rúbricas y calificaciones.
 
+Para `Sistemas Digitales` y `Plataformas de Hardware`, al crear cada paralelo
+se generan automáticamente siete grupos con los temas fijos del catálogo. La
+asignación de integrantes es única para el paralelo (aplica a ambos
+hemisemestres) y comienza abierta. Cada estudiante puede unirse, moverse,
+cambiar entre expositor/evaluador y elegir ser líder desde `Mi grupo`.
+
+El profesor finaliza la etapa desde `Grupos y temas`. La base de datos valida
+que existan exactamente siete grupos, que todos tengan integrantes, que todos
+los estudiantes matriculados pertenezcan a un solo grupo, que cada grupo
+tenga exactamente un líder y que los grupos con más de tres integrantes
+tengan un evaluador. Una etapa finalizada bloquea los cambios estudiantiles;
+el profesor puede reabrirla explícitamente. `Redes Eléctricas` permanece
+pendiente y no recibe grupos automáticos en esta versión.
+
 Al insertar un paralelo, los triggers del esquema crean sus dos hemisemestres y la configuración inicial de notas. El sistema usa una ponderación de 70% para la calificación del profesor y 30% para la coevaluación.
 
 ### Edge Function

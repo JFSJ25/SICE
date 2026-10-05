@@ -4,7 +4,10 @@ import { useOutletContext, useNavigate } from 'react-router-dom'
 import {
   obtenerGruposConDetalle,
   obtenerMapaCalificacionesDocente,
-  obtenerPromedioCoeval
+  obtenerPromedioCoeval,
+  obtenerEstadoAsignacion,
+  finalizarAsignacion,
+  reabrirAsignacion
 } from '../../lib/data.js'
 import { obtenerRubrica, puntajeMaximo } from '../../lib/rubricas.js'
 import {
@@ -26,6 +29,12 @@ export default function Grupos() {
   const [mapaNotas, setMapaNotas] = useState(new Map())
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
+  const [estadoAsignacion, setEstadoAsignacion] = useState('abierta')
+  const [guardandoEstado, setGuardandoEstado] = useState(false)
+  const usaAsignacionAutonoma = [
+    'Sistemas Digitales',
+    'Plataformas de Hardware'
+  ].includes(contexto?.materiaNombre)
 
   useEffect(() => {
     if (!contexto || !hemisemestreActivo) {
@@ -39,10 +48,14 @@ export default function Grupos() {
     setCargando(true)
     setError('')
     try {
-      const gs = await obtenerGruposConDetalle(
-        contexto.paraleloId,
-        hemisemestreActivo.id
-      )
+      const [gs, estado] = await Promise.all([
+        obtenerGruposConDetalle(contexto.paraleloId, hemisemestreActivo.id),
+        obtenerEstadoAsignacion(contexto.paraleloId)
+      ])
+      // Conserva los grupos visibles aunque falle una consulta secundaria,
+      // como calificaciones o promedios.
+      setGrupos(gs)
+      setEstadoAsignacion(estado)
       const ids = gs.flatMap(g => g.miembros.map(m => m.usuarioId))
       const [mapa, rubricas] = await Promise.all([
         obtenerMapaCalificacionesDocente(ids, hemisemestreActivo.id),
@@ -108,13 +121,31 @@ export default function Grupos() {
           })
         })
       })
-      setGrupos(gs)
       setMapaCalif(mapa)
       setMapaNotas(notas)
     } catch (e) {
       setError(e.message)
     } finally {
       setCargando(false)
+    }
+
+  }
+
+  async function cambiarEstado() {
+    setGuardandoEstado(true)
+    setError('')
+    try {
+      if (estadoAsignacion === 'finalizada') {
+        await reabrirAsignacion(contexto.paraleloId)
+        setEstadoAsignacion('abierta')
+      } else {
+        await finalizarAsignacion(contexto.paraleloId)
+        setEstadoAsignacion('finalizada')
+      }
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setGuardandoEstado(false)
     }
   }
 
@@ -124,7 +155,7 @@ export default function Grupos() {
         <Spinner className="text-ink-soft" />
       </div>
     )
-  if (error) return <Aviso variant="red">{error}</Aviso>
+  if (error && grupos.length === 0) return <Aviso variant="red">{error}</Aviso>
   if (!contexto)
     return (
       <Aviso>
@@ -147,7 +178,45 @@ export default function Grupos() {
         <p className="text-sm text-ink-soft mt-1">
           Selecciona un integrante para registrar o editar su calificación.
         </p>
+        {usaAsignacionAutonoma ? (
+          <div className="flex flex-wrap items-center gap-3 mt-4">
+            <Badge variant={estadoAsignacion === 'finalizada' ? 'ok' : 'pending'}>
+              Asignación {estadoAsignacion === 'finalizada' ? 'finalizada' : 'abierta'}
+            </Badge>
+            <Button
+              size="sm"
+              variant={estadoAsignacion === 'finalizada' ? 'outline' : 'primary'}
+              onClick={cambiarEstado}
+              disabled={guardandoEstado}
+            >
+              {guardandoEstado
+                ? 'Guardando…'
+                : estadoAsignacion === 'finalizada'
+                  ? 'Reabrir asignación'
+                  : 'Finalizar asignación'}
+            </Button>
+          </div>
+        ) : (
+          <p className="text-xs text-ink-soft mt-4">
+            La asignación autónoma todavía no está disponible para esta materia.
+          </p>
+        )}
       </div>
+
+      {error && (
+        <Aviso variant="red">
+          {error}
+          {/* <Button
+            size="sm"
+            variant="outline"
+            className="ml-2"
+            onClick={cargar}
+            disabled={cargando || guardandoEstado}
+          >
+            Reintentar
+          </Button> */}
+        </Aviso>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 mb-7">

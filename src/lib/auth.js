@@ -5,7 +5,15 @@ export async function iniciarSesion(email, password) {
     email,
     password
   })
-  if (error) return { error: error.message }
+  if (error) {
+    if (
+      error.code === 'invalid_credentials' ||
+      error.message === 'Invalid login credentials'
+    ) {
+      return { error: 'Usuario o contraseña incorrectos' }
+    }
+    return { error: error.message }
+  }
   return { data }
 }
 
@@ -94,7 +102,7 @@ export async function obtenerContextoEstudiante(usuarioId) {
   const { data, error } = await supabase
     .from('matriculas')
     .select(
-      'paralelo_id, paralelos(codigo, materias(nombre), periodos(nombre))'
+      'paralelo_id, paralelos(codigo, estado_asignacion, materias(nombre), periodos(nombre))'
     )
     .eq('usuario_id', usuarioId)
     .order('id', { ascending: false })
@@ -105,8 +113,9 @@ export async function obtenerContextoEstudiante(usuarioId) {
 
   const { data: miembro, error: errM } = await supabase
     .from('grupo_miembros')
-    .select('grupo_id, rol_grupo, lider')
+    .select('grupo_id, rol_grupo, lider, grupos!inner(paralelo_id)')
     .eq('usuario_id', usuarioId)
+    .eq('grupos.paralelo_id', data.paralelo_id)
     .maybeSingle()
   if (errM) throw errM
 
@@ -117,6 +126,7 @@ export async function obtenerContextoEstudiante(usuarioId) {
     materiaNombre: p?.materias?.nombre ?? '—',
     periodoNombre: p?.periodos?.nombre ?? '—',
     etiqueta: `${p?.materias?.nombre ?? '—'} ${p?.codigo ?? ''} · ${p?.periodos?.nombre ?? '—'}`,
+    estadoAsignacion: p?.estado_asignacion ?? 'abierta',
     grupoId: miembro?.grupo_id ?? null,
     rolGrupo: miembro?.rol_grupo ?? null,
     lider: miembro?.lider ?? false

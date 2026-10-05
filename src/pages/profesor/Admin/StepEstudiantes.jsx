@@ -5,9 +5,9 @@ import {
   obtenerHemisemestres
 } from '../../../lib/data.js'
 import {
+  descargarCredencialesExcel,
   descargarTexto,
-  importarEstudiantes,
-  serializarCSVCredenciales
+  importarEstudiantes
 } from '../../../lib/importarEstudiantes.js'
 import { Panel, Button, Aviso, Spinner } from '../../../components/ui/index.jsx'
 import { SelectorParalelo } from './StepParalelo.jsx'
@@ -135,9 +135,8 @@ export default function StepEstudiantes({
       const res = { creados: creados.length, errores, credenciales: creados }
       setResultado(res)
 
-      // Descarga automática del CSV de credenciales
-      if (creados.length > 0)
-        descargarTexto('credenciales.csv', serializarCSVCredenciales(creados))
+      // Descarga automática del Excel de credenciales
+      if (creados.length > 0) descargarCredencialesExcel(creados)
     } catch (e) {
       let mensaje = e.message ?? String(e)
       if (e?.context instanceof Response) {
@@ -168,7 +167,7 @@ export default function StepEstudiantes({
         <code className="bg-surface px-1 rounded text-xs">nombre_completo</code>{' '}
         y <code className="bg-surface px-1 rounded text-xs">correo</code>. Las
         cuentas se crean automáticamente y recibirás un archivo{' '}
-        <strong>credenciales.csv</strong> para distribuir.
+        <strong>credenciales_estudiantes.xlsx</strong> para distribuir.
       </p>
 
       {error && <Aviso variant="red">{error}</Aviso>}
@@ -266,7 +265,7 @@ export default function StepEstudiantes({
             {resultado.creados} cuenta{resultado.creados !== 1 ? 's' : ''}{' '}
             matriculada
             {resultado.creados !== 1 ? 's' : ''}. Se descargó{' '}
-            <strong>credenciales.csv</strong> automáticamente.
+            <strong>credenciales_estudiantes.xlsx</strong> automáticamente.
           </Aviso>
 
           {resultado.errores.length > 0 && (
@@ -286,12 +285,7 @@ export default function StepEstudiantes({
 
           <button
             className="text-xs flex items-center text-sice-green font-semibold hover:underline self-start"
-            onClick={() =>
-              descargarTexto(
-                'credenciales.csv',
-                serializarCSVCredenciales(resultado.credenciales)
-              )
-            }
+            onClick={() => descargarCredencialesExcel(resultado.credenciales)}
           >
             <DownloadIcon className="w-4 h-4 inline align-text-bottom" /> Volver
             a descargar las credenciales

@@ -29,3 +29,5 @@ yarn-error.log*
 
 # Archivos por revisar
 SECURITY.md
+MANUAL_USUARIO.md
+schemas/migration_asignacion_autonoma.sql

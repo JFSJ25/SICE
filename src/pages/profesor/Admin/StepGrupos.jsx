@@ -44,6 +44,13 @@ export default function StepGrupos({
   const [modoMover, setModoMover] = useState(null) // { usuarioId, grupoOrigenId }
   const [modoAgregar, setModoAgregar] = useState(null)
   const [modoEdicion, setModoEdicion] = useState(false)
+  const paraleloActual = paralelos.find(
+    p => (p.id ?? p.paraleloId) === paraleloId
+  )
+  const catalogoFijo = [
+    'Sistemas Digitales',
+    'Plataformas de Hardware'
+  ].includes(paraleloActual?.materiaNombre)
 
   useEffect(() => {
     cargar()
@@ -107,7 +114,7 @@ export default function StepGrupos({
       {error && <Aviso variant="red">{error}</Aviso>}
 
       {/* Builder: crear nuevo grupo */}
-      {sinGrupo.length > 0 && (
+      {!catalogoFijo && sinGrupo.length > 0 && (
         <BuilderNuevoGrupo
           sinGrupo={sinGrupo}
           siguienteNumero={grupos.length + 1}
@@ -118,9 +125,26 @@ export default function StepGrupos({
         />
       )}
 
+      {catalogoFijo && (
+        <Aviso>
+          Este paralelo usa siete grupos y temas fijos. Los estudiantes
+          realizan su propia asignación desde «Mi grupo» mientras la etapa esté
+          abierta.
+        </Aviso>
+      )}
+
       {sinGrupo.length === 0 && grupos.length > 0 && (
         <Aviso variant="green">
-          Todos los estudiantes están asignados a un grupo.
+          Todos los estudiantes matriculados están asignados a un grupo.
+        </Aviso>
+      )}
+      {sinGrupo.length > 0 && grupos.length > 0 && (
+        <Aviso variant="amber">
+          Hay {sinGrupo.length} estudiante
+          {sinGrupo.length === 1 ? '' : 's'} matriculado
+          {sinGrupo.length === 1 ? '' : 's'} sin grupo. Debe
+          {sinGrupo.length === 1 ? '' : 'n'} ingresar a un grupo antes de
+          finalizar la asignación.
         </Aviso>
       )}
 
@@ -154,6 +178,7 @@ export default function StepGrupos({
                 modoAgregar={modoAgregar === g.id}
                 modoMover={modoMover?.grupoOrigenId === g.id ? modoMover : null}
                 modoEdicion={modoEdicion}
+                catalogoFijo={catalogoFijo}
                 onEditarTema={() => setModoEditar(g.id)}
                 onCerrarEditar={() => setModoEditar(null)}
                 onEditarRoles={() => setModoEditarRoles(g.id)}
@@ -448,6 +473,7 @@ function TarjetaGrupo({
   modoMover,
   modoAgregar,
   modoEdicion,
+  catalogoFijo,
   onEditarTema,
   onCerrarEditar,
   onEditarRoles,
@@ -660,7 +686,7 @@ function TarjetaGrupo({
               <PersonAddIcon className="w-4 h-4" /> Añadir
             </Button>
           )}
-          {modoEdicion && (
+          {modoEdicion && !catalogoFijo && (
             <>
               <Button
                 size="sm"

@@ -108,6 +108,45 @@ export async function obtenerHemisemestres(paraleloId) {
 
 // ---- Grupos ----
 
+export async function obtenerEstadoAsignacion(paraleloId) {
+  const { data, error } = await supabase
+    .from('paralelos')
+    .select('estado_asignacion')
+    .eq('id', paraleloId)
+    .single()
+  if (error) throw error
+  return data.estado_asignacion
+}
+
+export async function asignarEstudianteGrupo({
+  paraleloId,
+  grupoId,
+  rolGrupo,
+  lider
+}) {
+  const { error } = await supabase.rpc('asignar_estudiante_grupo', {
+    p_paralelo_id: paraleloId,
+    p_grupo_id: grupoId,
+    p_rol_grupo: rolGrupo,
+    p_lider: lider
+  })
+  if (error) throw error
+}
+
+export async function finalizarAsignacion(paraleloId) {
+  const { error } = await supabase.rpc('finalizar_asignacion', {
+    p_paralelo_id: paraleloId
+  })
+  if (error) throw error
+}
+
+export async function reabrirAsignacion(paraleloId) {
+  const { error } = await supabase.rpc('reabrir_asignacion', {
+    p_paralelo_id: paraleloId
+  })
+  if (error) throw error
+}
+
 function validarMiembrosGrupo(miembros) {
   const cantidadLideres = miembros.filter(m => m.lider).length
   if (cantidadLideres !== 1) {

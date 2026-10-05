@@ -79,6 +79,49 @@ export function serializarCSVCredenciales(filas) {
   ].join('\r\n')
 }
 
+export function descargarCredencialesExcel(filas) {
+  const filasHoja = [
+    ['Credenciales de estudiantes', '', ''],
+    [
+      'Entrega las credenciales de forma segura y solicita el cambio de contraseña.',
+      '',
+      ''
+    ],
+    ['Nombre completo', 'Correo institucional', 'Contraseña temporal'],
+    ...filas.map(fila => [
+      String(fila.nombre_completo ?? ''),
+      String(fila.email ?? ''),
+      String(fila.password ?? fila.contrasena ?? '')
+    ])
+  ]
+  const hoja = XLSX.utils.aoa_to_sheet(filasHoja)
+  const ultimaFila = filasHoja.length
+
+  hoja['!merges'] = [
+    { s: { c: 0, r: 0 }, e: { c: 2, r: 0 } },
+    { s: { c: 0, r: 1 }, e: { c: 2, r: 1 } }
+  ]
+  hoja['!cols'] = [{ wch: 32 }, { wch: 38 }, { wch: 24 }]
+  hoja['!autofilter'] = { ref: `A3:C${ultimaFila}` }
+
+  const libro = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(libro, hoja, 'Credenciales')
+  const datos = XLSX.write(libro, {
+    bookType: 'xlsx',
+    type: 'array',
+    cellStyles: true
+  })
+  const blob = new Blob([datos], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  })
+  const url = URL.createObjectURL(blob)
+  const enlace = document.createElement('a')
+  enlace.href = url
+  enlace.download = 'credenciales_estudiantes.xlsx'
+  enlace.click()
+  URL.revokeObjectURL(url)
+}
+
 export function descargarTexto(
   nombre,
   contenido,

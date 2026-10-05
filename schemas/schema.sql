@@ -39,6 +39,8 @@ create table public.paralelos (
   periodo_id  uuid not null references public.periodos(id)  on delete cascade,
   codigo      text not null check (codigo in ('A', 'B', 'C')),
   profesor_id uuid references public.usuarios(id),
+  estado_asignacion text not null default 'abierta'
+    check (estado_asignacion in ('abierta', 'finalizada')),
   creado_en   timestamptz not null default now(),
   unique (materia_id, periodo_id, codigo)
 );
@@ -136,6 +138,30 @@ create table public.grupo_miembros (
   lider      boolean not null default false,
   unique (grupo_id, usuario_id)
 );
+
+create or replace function public.validar_un_grupo_por_paralelo()
+returns trigger
+language plpgsql
+as $$
+begin
+  if exists (
+    select 1
+      from public.grupo_miembros gm
+      join public.grupos g on g.id = gm.grupo_id
+      join public.grupos nuevo on nuevo.id = new.grupo_id
+     where gm.usuario_id = new.usuario_id
+       and g.paralelo_id = nuevo.paralelo_id
+       and gm.id is distinct from new.id
+  ) then
+    raise exception 'Un estudiante solo puede pertenecer a un grupo por paralelo';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger trg_un_grupo_por_paralelo
+before insert or update of grupo_id, usuario_id on public.grupo_miembros
+for each row execute function public.validar_un_grupo_por_paralelo();
 
 -- Cada grupo puede tener como máximo un líder.
 create unique index grupo_miembros_un_lider_por_grupo
@@ -249,6 +275,11 @@ create table public.configuracion_notas (
 -- El profesor nunca tiene que hacer esto manualmente.
 create or replace function public.inicializar_paralelo()
 returns trigger as $$
+declare
+  materia_nombre text;
+  v_grupo_id uuid;
+  temas_primeros text[];
+  temas_segundos text[];
 begin
   -- Hemisemestres
   insert into public.hemisemestres (paralelo_id, nombre, orden) values
@@ -259,6 +290,64 @@ begin
   insert into public.configuracion_notas (paralelo_id, peso_profesor, peso_coevaluacion)
   values (new.id, 0.7, 0.3);
 
+  select nombre into materia_nombre
+    from public.materias
+   where id = new.materia_id;
+
+  if materia_nombre in ('Sistemas Digitales', 'Plataformas de Hardware') then
+    if materia_nombre = 'Sistemas Digitales' then
+      temas_primeros := array[
+        'Códigos binarios',
+        'Simplificación de funciones booleanas',
+        'Compuertas lógicas',
+        'Diseño de circuitos lógicos combinatorios',
+        'Multiplexores y demultiplexores',
+        'Decodificadores utilizados para el manejo de displays de 7 segmentos',
+        'Dispositivos lógicos programables'
+      ];
+      temas_segundos := array[
+        'Biestables sin cronómetro',
+        'Biestables con cronómetro',
+        'Contadores binarios',
+        'Registros de memoria',
+        'Fundamentos de la aritmética digital',
+        'Circuito sumador',
+        'Circuito restador'
+      ];
+    else
+      temas_primeros := array[
+        'Caracterización de los microprocesadores',
+        'Mapas de memoria de los sistemas microprocesados',
+        'Dispositivos para decodificación en los sistemas microprocesados',
+        'Dispositivos para memoria en los sistemas microprocesados',
+        'Arquitectura del microprocesador 8080/8085',
+        'Repertorio de instrucciones del microprocesador 8080/8085',
+        'Programación del microprocesador 8080/8085'
+      ];
+      temas_segundos := array[
+        'Introducción a los microcontroladores',
+        'Programación de los microcontroladores',
+        'Aplicaciones con los microcontroladores',
+        'Introducción a las plataformas de hardware',
+        'Programación de las plataformas de hardware',
+        'Aplicaciones con Arduino',
+        'Aplicaciones con Raspberry'
+      ];
+    end if;
+
+    for i in 1..7 loop
+      insert into public.grupos (paralelo_id, numero)
+      values (new.id, i)
+      returning id into v_grupo_id;
+
+      insert into public.grupo_temas (grupo_id, hemisemestre_id, tema)
+      select v_grupo_id, h.id,
+             case when h.orden = 1 then temas_primeros[i] else temas_segundos[i] end
+        from public.hemisemestres h
+       where h.paralelo_id = new.id;
+    end loop;
+  end if;
+
   return new;
 end;
 $$ language plpgsql;
@@ -266,6 +355,152 @@ $$ language plpgsql;
 create trigger trg_inicializar_paralelo
 after insert on public.paralelos
 for each row execute function public.inicializar_paralelo();
+
+-- Operaciones de asignación ejecutadas de forma atómica. El estudiante solo
+-- puede modificar su propia pertenencia mientras la etapa esté abierta.
+create or replace function public.asignar_estudiante_grupo(
+  p_paralelo_id uuid,
+  p_grupo_id uuid,
+  p_rol_grupo text,
+  p_lider boolean default false
+) returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  grupo_paralelo_id uuid;
+  miembro_actual public.grupo_miembros%rowtype;
+  evaluadores_destino integer;
+begin
+  if auth.uid() is null then raise exception 'Sesión requerida'; end if;
+  if p_rol_grupo not in ('expositor', 'evaluador') then
+    raise exception 'Rol de grupo no válido';
+  end if;
+
+  select paralelo_id into grupo_paralelo_id
+    from public.grupos where id = p_grupo_id;
+  if grupo_paralelo_id is distinct from p_paralelo_id then
+    raise exception 'El grupo no pertenece al paralelo';
+  end if;
+  if not exists (
+    select 1 from public.matriculas
+     where paralelo_id = p_paralelo_id and usuario_id = auth.uid()
+  ) then
+    raise exception 'El estudiante no está matriculado en este paralelo';
+  end if;
+  if not exists (
+    select 1 from public.paralelos
+     where id = p_paralelo_id and estado_asignacion = 'abierta'
+  ) then
+    raise exception 'La etapa de asignación está finalizada';
+  end if;
+
+  select gm.* into miembro_actual
+    from public.grupo_miembros gm
+    join public.grupos g on g.id = gm.grupo_id
+   where gm.usuario_id = auth.uid()
+     and g.paralelo_id = p_paralelo_id
+   for update;
+
+  if miembro_actual.grupo_id is not null then
+    delete from public.grupo_miembros where id = miembro_actual.id;
+  end if;
+
+  select count(*) into evaluadores_destino
+    from public.grupo_miembros
+   where grupo_id = p_grupo_id and rol_grupo = 'evaluador';
+  if p_rol_grupo = 'evaluador' and evaluadores_destino > 0 then
+    raise exception 'Cada grupo puede tener un solo evaluador';
+  end if;
+
+  if p_lider then
+    update public.grupo_miembros set lider = false
+     where grupo_id = p_grupo_id;
+  end if;
+
+  insert into public.grupo_miembros (grupo_id, usuario_id, rol_grupo, lider)
+  values (p_grupo_id, auth.uid(), p_rol_grupo, p_lider);
+end;
+$$;
+
+create or replace function public.finalizar_asignacion(p_paralelo_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  grupos_sin_integrantes integer;
+  cantidad_grupos integer;
+  matriculados integer;
+  asignados integer;
+  sin_grupo integer;
+  grupo record;
+begin
+  if not public.puede_gestionar_paralelo(p_paralelo_id) then
+    raise exception 'No autorizado';
+  end if;
+
+  select count(*) into cantidad_grupos
+    from public.grupos where paralelo_id = p_paralelo_id;
+  if cantidad_grupos <> 7 then
+    raise exception 'El paralelo debe tener exactamente siete grupos';
+  end if;
+
+  select count(*) into grupos_sin_integrantes
+    from public.grupos g
+   where g.paralelo_id = p_paralelo_id
+     and not exists (select 1 from public.grupo_miembros gm where gm.grupo_id = g.id);
+  if grupos_sin_integrantes > 0 then
+    raise exception 'Todos los grupos deben tener al menos un integrante';
+  end if;
+
+  select count(*) into matriculados from public.matriculas where paralelo_id = p_paralelo_id;
+  select count(distinct gm.usuario_id) into asignados
+    from public.grupo_miembros gm
+    join public.grupos g on g.id = gm.grupo_id
+   where g.paralelo_id = p_paralelo_id;
+  sin_grupo := matriculados - asignados;
+  if sin_grupo > 0 then
+    raise exception 'Hay % estudiante(s) matriculado(s) sin grupo. Revisa el paso Estudiantes y la asignación de grupos', sin_grupo;
+  elsif sin_grupo < 0 then
+    raise exception 'Hay % integrante(s) en grupos que no están matriculados en este paralelo', abs(sin_grupo);
+  end if;
+
+  for grupo in select id, numero from public.grupos where paralelo_id = p_paralelo_id loop
+    if (select count(*) from public.grupo_miembros where grupo_id = grupo.id and lider) <> 1 then
+      raise exception 'El grupo % debe tener exactamente un líder', grupo.numero;
+    end if;
+    if (select count(*) from public.grupo_miembros where grupo_id = grupo.id) > 3
+       and (select count(*) from public.grupo_miembros where grupo_id = grupo.id and rol_grupo = 'evaluador') <> 1 then
+      raise exception 'El grupo % debe tener un evaluador', grupo.numero;
+    end if;
+  end loop;
+
+  update public.paralelos set estado_asignacion = 'finalizada'
+   where id = p_paralelo_id;
+end;
+$$;
+
+create or replace function public.reabrir_asignacion(p_paralelo_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.puede_gestionar_paralelo(p_paralelo_id) then
+    raise exception 'No autorizado';
+  end if;
+  update public.paralelos set estado_asignacion = 'abierta'
+   where id = p_paralelo_id;
+end;
+$$;
+
+grant execute on function public.asignar_estudiante_grupo(uuid, uuid, text, boolean) to authenticated;
+grant execute on function public.finalizar_asignacion(uuid) to authenticated;
+grant execute on function public.reabrir_asignacion(uuid) to authenticated;
 
 -- ============================================================
 -- 6. FUNCIÓN SECURITY DEFINER — promedios anonimizados
@@ -381,6 +616,22 @@ returns boolean as $$
   );
 $$ language sql stable security definer set search_path = public;
 
+create or replace function public.es_catalogo_fijo(p_paralelo_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+      from public.paralelos p
+      join public.materias m on m.id = p.materia_id
+     where p.id = p_paralelo_id
+       and m.nombre in ('Sistemas Digitales', 'Plataformas de Hardware')
+  );
+$$;
+
 -- usuarios
 create policy "usuarios_select" on public.usuarios
   for select using (
@@ -426,8 +677,14 @@ create policy "hemisemestres_write" on public.hemisemestres
 create policy "grupos_select" on public.grupos
   for select using (public.puede_ver_paralelo(paralelo_id));
 create policy "grupos_write" on public.grupos
-  for all using (public.puede_gestionar_paralelo(paralelo_id))
-  with check (public.puede_gestionar_paralelo(paralelo_id));
+  for all using (
+    public.puede_gestionar_paralelo(paralelo_id)
+    and not public.es_catalogo_fijo(paralelo_id)
+  )
+  with check (
+    public.puede_gestionar_paralelo(paralelo_id)
+    and not public.es_catalogo_fijo(paralelo_id)
+  );
 
 -- grupo_miembros
 create policy "grupo_miembros_select" on public.grupo_miembros
@@ -474,6 +731,7 @@ create policy "grupo_temas_write" on public.grupo_temas
       from public.grupos g
       where g.id = grupo_temas.grupo_id
         and public.puede_gestionar_paralelo(g.paralelo_id)
+        and not public.es_catalogo_fijo(g.paralelo_id)
     )
   )
   with check (
@@ -482,6 +740,7 @@ create policy "grupo_temas_write" on public.grupo_temas
       from public.grupos g
       where g.id = grupo_temas.grupo_id
         and public.puede_gestionar_paralelo(g.paralelo_id)
+        and not public.es_catalogo_fijo(g.paralelo_id)
     )
   );
 
