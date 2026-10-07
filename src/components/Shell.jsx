@@ -42,7 +42,7 @@ export default function Shell() {
   useEffect(() => {
     if (!perfil) return
     cargarContexto()
-  }, [perfil])
+  }, [perfil?.id])
 
   async function cargarContexto(mostrarCarga = true) {
     if (mostrarCarga) setCargando(true)
