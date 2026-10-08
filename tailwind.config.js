@@ -11,7 +11,7 @@ export default {
         'gold-soft': '#DBEAFE',
         ink: '#12213A',
         'ink-mid': '#40516D',
-        'ink-soft': '#71819B',
+        'ink-soft': '#5B6B85',
         surface: '#F4F7FB',
         sice: {
           green: '#0F766E',

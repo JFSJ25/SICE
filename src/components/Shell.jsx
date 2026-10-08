@@ -168,7 +168,7 @@ export default function Shell() {
           SICE
         </span>
         {contexto && (
-          <span className="ml-auto text-xs text-white/40 truncate max-w-[180px]">
+          <span className="ml-auto text-xs text-white/65 truncate max-w-[180px]">
             {contexto.etiqueta}
           </span>
         )}
@@ -202,20 +202,24 @@ export default function Shell() {
               <p className="font-display font-bold text-white text-sm leading-tight">
                 SICE
               </p>
-              <p className="text-[10px] text-white/35 leading-tight">UTMACH</p>
+              <p className="text-[10px] text-white/65 leading-tight">UTMACH</p>
             </div>
           </div>
 
           {/* Selector de contexto — solo profesor */}
           {esStaff && paralelos.length > 0 && (
             <div className="mb-4 p-2.5 bg-white/5 rounded-sm border border-white/8">
-              <p className="text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-1.5">
+              <label
+                htmlFor="select-paralelo"
+                className="block text-[10px] font-semibold text-white/65 uppercase tracking-wider mb-1.5"
+              >
                 Materia - Paralelo activo
-              </p>
+              </label>
               <select
+                id="select-paralelo"
                 value={contexto?.paraleloId ?? ''}
                 onChange={e => cambiarParalelo(e.target.value)}
-                className="w-full bg-white/9 border border-white/12 rounded-sm text-black text-xs px-2.5 py-1.5 focus:outline-none focus:border-gold"
+                className="w-full bg-white/10 border border-white/40 rounded-sm text-white text-xs px-2.5 py-1.5 focus:outline-none focus:border-gold-dim focus:ring-1 focus:ring-gold-dim"
               >
                 {paralelos.map(p => (
                   <option
@@ -241,8 +245,8 @@ export default function Shell() {
                     flex-1 text-xs font-semibold py-1.5 rounded-[4px] transition-colors
                     ${
                       hemisemestreActivo?.id === h.id
-                        ? 'bg-gold text-ink'
-                        : 'text-white/50 hover:text-white/80'
+                        ? 'bg-gold text-white'
+                        : 'text-white/70 hover:text-white'
                     }
                   `}
                 >
@@ -298,7 +302,7 @@ export default function Shell() {
             <p className="text-sm font-semibold text-white mb-0.5 truncate">
               {perfil?.nombre_completo}
             </p>
-            <p className="text-xs text-white/40 mb-3">{rolTexto}</p>
+            <p className="text-xs text-white/65 mb-3">{rolTexto}</p>
             <button
               onClick={handleLogout}
               className="w-full flex items-center justify-center gap-2 text-xs font-semibold px-3 py-2 rounded-sm border border-white/15 text-white/60 hover:text-white/90 hover:bg-white/7 transition-colors"

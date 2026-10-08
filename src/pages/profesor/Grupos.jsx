@@ -274,7 +274,7 @@ function CardGrupo({ grupo, mapaCalif, mapaNotas, onCalificar }) {
       <p className="text-[11px] font-bold text-sice-green mb-1">
         Grupo {grupo.numero}
       </p>
-      <h3 className="text-base mb-4 leading-snug">{grupo.tema}</h3>
+      <h2 className="text-base mb-4 leading-snug">{grupo.tema}</h2>
 
       <ul className="flex flex-col gap-2">
         {grupo.miembros.map(m => {
