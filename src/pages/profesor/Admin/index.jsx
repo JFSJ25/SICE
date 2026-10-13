@@ -67,7 +67,7 @@ export default function Admin() {
   return (
     <div>
       <div className="mb-7">
-        <p className="text-xs font-semibold text-sice-green mb-1.5">
+        <p className="text-xs font-semibold text-sice-green dark:text-emerald-300 mb-1.5">
           Configuración
         </p>
         <h1>Administración</h1>
@@ -88,10 +88,10 @@ export default function Admin() {
               flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold border-2 transition-colors
               ${
                 i < pasoActual
-                  ? 'bg-sice-green border-sice-green text-white'
+                  ? 'bg-sice-green dark:bg-emerald-500 border-sice-green dark:border-emerald-500 text-white'
                   : i === pasoActual
-                    ? 'bg-gold border-gold text-ink'
-                    : 'bg-surface border-black/20 text-ink-soft'
+                    ? 'bg-gold border-gold text-white'
+                    : 'bg-surface dark:bg-slate-800 border-black/20 dark:border-white/20 text-ink-soft'
               }
                   ${i > 0 && !paraleloId ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
             `}
@@ -111,7 +111,7 @@ export default function Admin() {
               <div
                 className={`
                 mx-2 md:mx-4 h-px w-6 md:w-16
-                ${i < pasoActual ? 'bg-sice-green' : 'bg-black/15'}
+                ${i < pasoActual ? 'bg-sice-green dark:bg-emerald-500' : 'bg-black/15 dark:bg-white/20'}
               `}
               />
             )}

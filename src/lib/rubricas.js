@@ -7,7 +7,8 @@ export async function obtenerRubrica(tipo) {
 
   const { data, error } = await supabase
     .from('rubricas')
-    .select(`
+    .select(
+      `
       id, tipo, nombre, nota_especial,
       rubrica_categorias (
         id, nombre, orden,
@@ -16,7 +17,8 @@ export async function obtenerRubrica(tipo) {
           rubrica_opciones ( id, etiqueta, puntos, orden )
         )
       )
-    `)
+    `
+    )
     .eq('tipo', tipo)
     .eq('activa', true)
     .order('version', { ascending: false })
@@ -56,7 +58,10 @@ export function leerRespuestas(rubrica, seleccionadas) {
   rubrica.rubrica_categorias.forEach(cat =>
     cat.rubrica_criterios.forEach(crit => {
       const opcionId = seleccionadas.get(crit.id)
-      if (!opcionId) { completo = false; return }
+      if (!opcionId) {
+        completo = false
+        return
+      }
       respuestas[crit.id] = opcionId
       const opcion = crit.rubrica_opciones.find(o => o.id === opcionId)
       if (opcion) puntaje += Number(opcion.puntos)

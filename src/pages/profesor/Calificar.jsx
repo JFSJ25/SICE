@@ -17,7 +17,8 @@ import {
   Button,
   Campo,
   Textarea,
-  Spinner
+  Spinner,
+  LoadingSkeleton
 } from '../../components/ui/index.jsx'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import SaveIcon from '@mui/icons-material/Save'
@@ -125,9 +126,7 @@ export default function Calificar() {
 
   if (cargando)
     return (
-      <div className="flex justify-center py-20">
-        <Spinner className="text-ink-soft" />
-      </div>
+      <LoadingSkeleton />
     )
   if (error && !rubrica) return <Aviso variant="red">{error}</Aviso>
 
@@ -139,7 +138,7 @@ export default function Calificar() {
       {/* Breadcrumb */}
       <button
         onClick={() => navigate(-1)}
-        className="text-sm text-sice-green font-semibold hover:underline mb-4 block"
+        className="flex items-center gap-1 text-sm text-sice-green dark:text-emerald-300 font-semibold hover:underline mb-4"
       >
         <>
           <ArrowBackIcon className="w-4 h-4" /> Volver
@@ -163,7 +162,7 @@ export default function Calificar() {
       {error && <Aviso variant="red">{error}</Aviso>}
       {exito && <Aviso variant="green">Calificación guardada.</Aviso>}
 
-      <div className="bg-white border border-black/[0.11] rounded-DEFAULT shadow-card p-5 md:p-6">
+      <div className="bg-white dark:bg-slate-800 border border-black/[0.11] dark:border-white/10 rounded-DEFAULT shadow-card p-5 md:p-6">
         {rubrica && (
           <RubricaForm
             rubrica={rubrica}
@@ -175,7 +174,7 @@ export default function Calificar() {
         )}
 
         {/* Campo de retroalimentación */}
-        <div className="mt-6 pt-5 border-t border-black/[0.08]">
+        <div className="mt-6 pt-5 border-t border-black/[0.08] dark:border-white/10">
           <Campo label="Retroalimentación para el estudiante">
             <Textarea
               value={comentario}

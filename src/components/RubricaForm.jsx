@@ -2,7 +2,12 @@ import { puntajeMaximo } from '../lib/rubricas.js'
 
 // seleccionadas: Map<criterioId, opcionId>
 // onCambio: (criterioId, opcionId) => void
-export default function RubricaForm({ rubrica, seleccionadas, onCambio, prefijo = '' }) {
+export default function RubricaForm({
+  rubrica,
+  seleccionadas,
+  onCambio,
+  prefijo = ''
+}) {
   const max = puntajeMaximo(rubrica)
   const puntajeActual = calcularPuntaje(rubrica, seleccionadas)
   const completo = rubrica.rubrica_categorias.every(cat =>
@@ -13,13 +18,17 @@ export default function RubricaForm({ rubrica, seleccionadas, onCambio, prefijo 
     <div>
       {rubrica.rubrica_categorias.map(cat => {
         const pesoCat = cat.rubrica_criterios.reduce(
-          (a, c) => a + Math.max(...c.rubrica_opciones.map(o => Number(o.puntos))), 0
+          (a, c) =>
+            a + Math.max(...c.rubrica_opciones.map(o => Number(o.puntos))),
+          0
         )
         return (
           <div key={cat.id} className="mb-6">
-            <div className="flex justify-between items-baseline border-b-2 border-ink pb-1.5 mb-4">
+            <div className="flex justify-between items-baseline border-b-2 border-ink dark:border-white/40 pb-1.5 mb-4">
               <h4 className="font-display text-base font-bold">{cat.nombre}</h4>
-              <span className="text-xs text-ink-soft font-semibold">{pesoCat} pts</span>
+              <span className="text-xs text-ink-soft font-semibold">
+                {pesoCat} pts
+              </span>
             </div>
 
             {cat.rubrica_criterios.map((crit, idx, arr) => (
@@ -29,7 +38,9 @@ export default function RubricaForm({ rubrica, seleccionadas, onCambio, prefijo 
               >
                 <p className="text-sm font-semibold mb-1">{crit.nombre}</p>
                 {crit.observacion && (
-                  <p className="text-xs text-ink-soft mb-2.5 leading-relaxed">{crit.observacion}</p>
+                  <p className="text-xs text-ink-soft mb-2.5 leading-relaxed">
+                    {crit.observacion}
+                  </p>
                 )}
                 <div className="flex flex-col gap-1.5">
                   {crit.rubrica_opciones.map(op => {
@@ -38,11 +49,13 @@ export default function RubricaForm({ rubrica, seleccionadas, onCambio, prefijo 
                       <label
                         key={op.id}
                         className={`
-                          flex items-start gap-2.5 p-2.5 rounded-sm border text-sm cursor-pointer
+                          flex items-center gap-2.5 p-2.5 rounded-sm border text-sm cursor-pointer
                           transition-colors
-                          ${marcada
-                            ? 'bg-sice-green-soft border-sice-green/40'
-                            : 'border-black/10 hover:border-gold/60'}
+                          ${
+                            marcada
+                              ? 'bg-sice-green-soft border-sice-green/40'
+                              : 'border-black/10 dark:border-white/20 hover:border-gold/60'
+                          }
                         `}
                       >
                         <input
@@ -53,8 +66,12 @@ export default function RubricaForm({ rubrica, seleccionadas, onCambio, prefijo 
                           onChange={() => onCambio(crit.id, op.id)}
                           className="mt-0.5 accent-gold flex-shrink-0"
                         />
-                        <span className="flex-1 leading-snug">{op.etiqueta}</span>
-                        <span className={`text-xs font-bold flex-shrink-0 pl-2 ${marcada ? 'text-sice-green' : 'text-ink-soft'}`}>
+                        <span className="flex-1 leading-snug">
+                          {op.etiqueta}
+                        </span>
+                        <span
+                          className={`text-xs font-bold flex-shrink-0 pl-2 ${marcada ? 'text-sice-green' : 'text-ink-soft'}`}
+                        >
                           {op.puntos} pts
                         </span>
                       </label>

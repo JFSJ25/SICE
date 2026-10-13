@@ -16,9 +16,11 @@ import {
   Badge,
   Button,
   Aviso,
-  Spinner
+  Spinner,
+  LoadingSkeleton
 } from '../../components/ui/index.jsx'
 import EditIcon from '@mui/icons-material/Edit'
+import CloseIcon from '@mui/icons-material/Close'
 
 export default function Grupos() {
   const { contexto, hemisemestreActivo } = useOutletContext()
@@ -128,7 +130,6 @@ export default function Grupos() {
     } finally {
       setCargando(false)
     }
-
   }
 
   async function cambiarEstado() {
@@ -151,9 +152,7 @@ export default function Grupos() {
 
   if (cargando)
     return (
-      <div className="flex justify-center py-20">
-        <Spinner className="text-ink-soft" />
-      </div>
+      <LoadingSkeleton />
     )
   if (error && grupos.length === 0) return <Aviso variant="red">{error}</Aviso>
   if (!contexto)
@@ -180,12 +179,17 @@ export default function Grupos() {
         </p>
         {usaAsignacionAutonoma ? (
           <div className="flex flex-wrap items-center gap-3 mt-4">
-            <Badge variant={estadoAsignacion === 'finalizada' ? 'ok' : 'pending'}>
-              Asignación {estadoAsignacion === 'finalizada' ? 'finalizada' : 'abierta'}
+            <Badge
+              variant={estadoAsignacion === 'finalizada' ? 'ok' : 'pending'}
+            >
+              Asignación{' '}
+              {estadoAsignacion === 'finalizada' ? 'finalizada' : 'abierta'}
             </Badge>
             <Button
               size="sm"
-              variant={estadoAsignacion === 'finalizada' ? 'outline' : 'primary'}
+              variant={
+                estadoAsignacion === 'finalizada' ? 'outline' : 'primary'
+              }
               onClick={cambiarEstado}
               disabled={guardandoEstado}
             >
@@ -204,7 +208,7 @@ export default function Grupos() {
       </div>
 
       {error && (
-        <Aviso variant="red">
+        <Aviso variant="red" dismissible>
           {error}
           {/* <Button
             size="sm"
@@ -271,7 +275,7 @@ function CardGrupo({ grupo, mapaCalif, mapaNotas, onCalificar }) {
 
   return (
     <div className="bg-white border border-black/[0.11] rounded-DEFAULT shadow-card p-5">
-      <p className="text-[11px] font-bold text-sice-green mb-1">
+      <p className="text-[11px] font-bold text-sice-green dark:text-emerald-300 mb-1">
         Grupo {grupo.numero}
       </p>
       <h2 className="text-base mb-4 leading-snug">{grupo.tema}</h2>
@@ -343,7 +347,7 @@ function CardGrupo({ grupo, mapaCalif, mapaNotas, onCalificar }) {
             onClick={() => setDetalle(null)}
           >
             <div
-              className="w-full max-w-md bg-white rounded-DEFAULT shadow-card p-5"
+              className="w-full max-w-md bg-white dark:bg-slate-800 border border-black/[0.11] dark:border-white/10 rounded-DEFAULT shadow-card p-5"
               role="dialog"
               aria-modal="true"
               aria-labelledby={`detalles-${grupo.id}`}
@@ -364,7 +368,7 @@ function CardGrupo({ grupo, mapaCalif, mapaNotas, onCalificar }) {
                   onClick={() => setDetalle(null)}
                   aria-label="Cerrar detalles"
                 >
-                  X
+                  <CloseIcon style={{ width: '1.25rem', height: '1.25rem' }} />
                 </Button>
               </div>
               <div className="flex flex-col gap-2">
@@ -376,7 +380,7 @@ function CardGrupo({ grupo, mapaCalif, mapaNotas, onCalificar }) {
                   label="Promedio coevaluación (30%)"
                   valor={detalle.nota?.coevaluacion}
                 />
-                <div className="pt-3 mt-2 border-t border-black/10">
+                <div className="pt-3 mt-2 border-t border-black/10 dark:border-white/15">
                   <DetalleNota label="Nota final" valor={detalle.nota?.final} />
                 </div>
               </div>

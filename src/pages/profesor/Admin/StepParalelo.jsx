@@ -17,7 +17,8 @@ import {
   Input,
   Button,
   Aviso,
-  Spinner
+  Spinner,
+  LoadingSkeleton
 } from '../../../components/ui/index.jsx'
 import AddIcon from '@mui/icons-material/Add'
 import CloseIcon from '@mui/icons-material/Close'
@@ -229,9 +230,7 @@ export default function StepParalelo({
 
   if (cargando)
     return (
-      <div className="flex justify-center py-10">
-        <Spinner className="text-ink-soft" />
-      </div>
+      <LoadingSkeleton />
     )
 
   return (
@@ -305,7 +304,7 @@ export default function StepParalelo({
 
               <button
                 type="button"
-                className="text-xs text-sice-green font-semibold mt-2 hover:underline"
+                className="flex items-center gap-1 text-xs text-sice-green dark:text-emerald-300 font-semibold mt-2 hover:underline"
                 onClick={() => setMostrarNuevo(v => !v)}
               >
                 {mostrarNuevo ? (
@@ -396,7 +395,7 @@ export default function StepParalelo({
         {paralelos.length > 0 && (
           <button
             type="button"
-            className="text-xs text-sice-green font-semibold hover:underline self-start"
+            className="flex items-center gap-1 text-xs text-sice-green dark:text-emerald-300 font-semibold hover:underline self-start"
             onClick={() => setModoNuevo(v => !v)}
           >
             {modoNuevo ? (

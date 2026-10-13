@@ -93,7 +93,7 @@ export default function Estudiantes() {
                 permanezca abierta.
               </p>
               <div className="flex flex-wrap items-center gap-2 mt-3">
-                <code className="bg-white/70 border border-sice-green/20 rounded-sm px-3 py-2 font-mono text-sm font-bold tracking-wide">
+                <code className="bg-white/70 border dark:bg-sidebar border-sice-green/20 rounded-sm px-3 py-2 font-mono text-sm font-bold tracking-wide">
                   {resultado.password_temporal}
                 </code>
                 <Button

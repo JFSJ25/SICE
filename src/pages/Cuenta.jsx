@@ -74,7 +74,7 @@ export default function Cuenta() {
 
       <Panel>
         <div className="flex items-center gap-2 mb-5">
-          <LockIcon className="w-5 h-5 text-sice-green" />
+          <LockIcon className="w-5 h-5 text-sice-green dark:text-emerald-300" />
           <h2 className="text-lg font-display font-bold">Cambiar contraseña</h2>
         </div>
 

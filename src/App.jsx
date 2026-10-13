@@ -1,5 +1,6 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
+import { LoadingSkeleton } from './components/ui/index.jsx'
 
 import Login from './pages/Login.jsx'
 import Shell from './components/Shell.jsx'
@@ -19,14 +20,18 @@ import Cuenta from './pages/Cuenta.jsx'
 import Estudiantes from './pages/profesor/Estudiantes.jsx'
 import AcercaDe from './pages/AcercaDe.jsx'
 
+import './App.css'
+
 // ---- Guardias de ruta ----
 
 function RequiereAuth({ children }) {
   const { sesion, cargando } = useAuth()
   if (cargando)
     return (
-      <div className="flex items-center justify-center min-h-screen text-ink-soft text-sm">
-        Cargando…
+      <div className="min-h-screen flex items-center justify-center px-5 py-8">
+        <div className="w-full max-w-2xl">
+          <LoadingSkeleton />
+        </div>
       </div>
     )
   if (!sesion) return <Navigate to="/login" replace />
@@ -35,7 +40,14 @@ function RequiereAuth({ children }) {
 
 function RequiereProfesor({ children }) {
   const { perfil, cargando } = useAuth()
-  if (cargando) return null
+  if (cargando)
+    return (
+      <div className="min-h-screen flex items-center justify-center px-5 py-8">
+        <div className="w-full max-w-2xl">
+          <LoadingSkeleton />
+        </div>
+      </div>
+    )
   if (!perfil || !['profesor', 'admin'].includes(perfil.rol_sistema))
     return <Navigate to="/estudiante/mi-grupo" replace />
   return children
@@ -43,7 +55,14 @@ function RequiereProfesor({ children }) {
 
 function RequiereEstudiante({ children }) {
   const { perfil, cargando } = useAuth()
-  if (cargando) return null
+  if (cargando)
+    return (
+      <div className="min-h-screen flex items-center justify-center px-5 py-8">
+        <div className="w-full max-w-2xl">
+          <LoadingSkeleton />
+        </div>
+      </div>
+    )
   if (!perfil || perfil.rol_sistema !== 'estudiante')
     return <Navigate to="/profesor/grupos" replace />
   return children
@@ -52,7 +71,14 @@ function RequiereEstudiante({ children }) {
 // Redirige según rol al entrar en "/"
 function RootRedirect() {
   const { perfil, cargando } = useAuth()
-  if (cargando) return null
+  if (cargando)
+    return (
+      <div className="min-h-screen flex items-center justify-center px-5 py-8">
+        <div className="w-full max-w-2xl">
+          <LoadingSkeleton />
+        </div>
+      </div>
+    )
   if (!perfil) return <Navigate to="/login" replace />
   if (['profesor', 'admin'].includes(perfil.rol_sistema))
     return <Navigate to="/profesor/grupos" replace />

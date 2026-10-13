@@ -12,7 +12,8 @@ import {
   Badge,
   Button,
   Select,
-  Spinner
+  Spinner,
+  LoadingSkeleton
 } from '../../components/ui/index.jsx'
 
 export default function MiGrupo() {
@@ -45,9 +46,7 @@ export default function MiGrupo() {
       setBorradores(
         Object.fromEntries(
           nuevosGrupos.map(grupo => {
-            const miembro = grupo.miembros.find(
-              m => m.usuarioId === perfil?.id
-            )
+            const miembro = grupo.miembros.find(m => m.usuarioId === perfil?.id)
             return [
               grupo.id,
               {
@@ -67,9 +66,8 @@ export default function MiGrupo() {
 
   const miGrupo = useMemo(
     () =>
-      grupos.find(g =>
-        g.miembros.some(m => m.usuarioId === perfil?.id)
-      ) ?? null,
+      grupos.find(g => g.miembros.some(m => m.usuarioId === perfil?.id)) ??
+      null,
     [grupos, perfil?.id]
   )
   const abierta = contexto?.estadoAsignacion !== 'finalizada'
@@ -110,9 +108,7 @@ export default function MiGrupo() {
 
   if (cargando)
     return (
-      <div className="flex justify-center py-20">
-        <Spinner className="text-ink-soft" />
-      </div>
+      <LoadingSkeleton />
     )
   if (error && grupos.length === 0) return <Aviso variant="red">{error}</Aviso>
   if (!contexto)
@@ -194,7 +190,9 @@ export default function MiGrupo() {
                   </li>
                 ))}
                 {grupo.miembros.length === 0 && (
-                  <li className="text-sm text-ink-soft">Aún no hay integrantes.</li>
+                  <li className="text-sm text-ink-soft">
+                    Aún no hay integrantes.
+                  </li>
                 )}
               </ul>
               {abierta && (

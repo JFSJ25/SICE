@@ -7,7 +7,8 @@ import {
   StatCard,
   Aviso,
   Button,
-  Spinner
+  Spinner,
+  LoadingSkeleton
 } from '../../components/ui/index.jsx'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import RateReviewIcon from '@mui/icons-material/RateReview'
@@ -53,9 +54,7 @@ export default function Coevaluar() {
 
   if (cargando)
     return (
-      <div className="flex justify-center py-20">
-        <Spinner className="text-ink-soft" />
-      </div>
+      <LoadingSkeleton />
     )
   if (error) return <Aviso variant="red">{error}</Aviso>
 

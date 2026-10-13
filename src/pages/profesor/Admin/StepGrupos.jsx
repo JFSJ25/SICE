@@ -15,6 +15,7 @@ import {
   Button,
   Aviso,
   Spinner,
+  LoadingSkeleton,
   Input,
   Select,
   Badge
@@ -96,9 +97,7 @@ export default function StepGrupos({
 
   if (cargando)
     return (
-      <div className="flex justify-center py-10">
-        <Spinner className="text-ink-soft" />
-      </div>
+      <LoadingSkeleton />
     )
 
   return (
@@ -126,10 +125,9 @@ export default function StepGrupos({
       )}
 
       {catalogoFijo && (
-        <Aviso>
-          Este paralelo usa siete grupos y temas fijos. Los estudiantes
-          realizan su propia asignación desde «Mi grupo» mientras la etapa esté
-          abierta.
+        <Aviso dismissible>
+          Este paralelo usa siete grupos y temas fijos. Los estudiantes realizan
+          su propia asignación desde «Mi grupo» mientras la etapa esté abierta.
         </Aviso>
       )}
 
@@ -151,7 +149,7 @@ export default function StepGrupos({
       {/* Lista de grupos existentes */}
       {grupos.length > 0 && (
         <div>
-          <div className="sticky top-[2.5rem] md:top-0 z-30 -mx-5 px-5 py-3 mb-3 border-b border-black/[0.08] bg-[#f8fafd]/95 backdrop-blur-sm sm:-mx-10 sm:px-10">
+          <div className="sticky top-[2.5rem] md:top-0 z-30 -mx-5 px-5 py-3 mb-3 border-b border-black/[0.08] dark:border-white/10 bg-[#f8fafd]/95 dark:bg-slate-900/95 backdrop-blur-sm sm:-mx-10 sm:px-10">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h3>Grupos creados</h3>
               <label className="inline-flex items-center gap-2 self-start sm:self-auto cursor-pointer text-sm font-semibold text-ink-mid">
@@ -670,9 +668,9 @@ function TarjetaGrupo({
   }
 
   return (
-    <div className="bg-white border border-black/[0.11] rounded-DEFAULT shadow-card p-4">
+    <div className="bg-white dark:bg-slate-800 border border-black/[0.11] dark:border-white/10 rounded-DEFAULT shadow-card p-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
-        <p className="text-xs font-bold text-sice-green">
+        <p className="text-xs font-bold text-sice-green dark:text-emerald-300">
           Grupo {grupo.numero}
         </p>
         <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
@@ -873,7 +871,7 @@ function TarjetaGrupo({
             {grupo.miembros.map(m => (
               <div
                 key={m.usuarioId}
-                className="flex flex-wrap items-center gap-3 bg-white rounded-sm px-3 py-2"
+                className="flex flex-wrap items-center gap-3 bg-white dark:bg-slate-700 rounded-sm px-3 py-2"
               >
                 <span className="min-w-0 flex-1 text-sm font-medium break-words">
                   {m.nombre}

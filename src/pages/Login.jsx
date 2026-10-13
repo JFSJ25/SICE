@@ -1,7 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { iniciarSesion } from '../lib/auth.js'
-import { Button, Campo, Input, Spinner } from '../components/ui/index.jsx'
+import {
+  Button,
+  Campo,
+  Input,
+  Spinner,
+  ThemeToggle
+} from '../components/ui/index.jsx'
 import LoginIcon from '@mui/icons-material/Login'
 
 export default function Login() {
@@ -26,13 +32,16 @@ export default function Login() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center px-4 py-8"
+      className="min-h-screen relative flex items-center justify-center px-4 py-8"
       style={{
         background:
           'radial-gradient(ellipse at 8% 12%, rgba(37,99,235,0.42) 0%, transparent 48%), radial-gradient(ellipse at 92% 88%, rgba(15,118,110,0.28) 0%, transparent 45%), #0B1930'
       }}
     >
-      <div className="w-full max-w-sm bg-white/95 backdrop-blur rounded-2xl shadow-2xl px-8 py-10 page-enter border border-white/20">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle compact />
+      </div>
+      <div className="w-full max-w-sm bg-white/95 dark:bg-slate-800 backdrop-blur rounded-2xl shadow-2xl px-8 py-10 page-enter border border-white/20">
         {/* Marca */}
         <div className="flex items-center gap-3 mb-8">
           <div className="w-10 h-10 rounded-lg bg-sidebar flex items-center justify-center font-display font-bold text-gold-dim text-xl flex-shrink-0">

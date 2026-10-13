@@ -19,6 +19,7 @@ import ManageAccountsIcon from '@mui/icons-material/ManageAccounts'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import LogoutIcon from '@mui/icons-material/Logout'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
+import { LoadingSkeleton, ThemeToggle } from './ui/index.jsx'
 
 // El Shell expone el contexto activo y el hemisemestre activo
 // a las páginas hijas a través de props pasadas por Outlet context.
@@ -167,8 +168,11 @@ export default function Shell() {
         <span className="font-display font-bold text-gold-dim text-base">
           SICE
         </span>
+        {/* <div className="ml-auto">
+          <ThemeToggle compact />
+        </div> */}
         {contexto && (
-          <span className="ml-auto text-xs text-white/65 truncate max-w-[180px]">
+          <span className="text-xs text-white/65 truncate max-w-[160px]">
             {contexto.etiqueta}
           </span>
         )}
@@ -186,7 +190,7 @@ export default function Shell() {
         {/* ---- Sidebar ---- */}
         <aside
           className={`
-            fixed top-10 bottom-0 left-0 z-[70] w-64 bg-sidebar border-r border-white/10
+            fixed top-10 bottom-0 left-0 z-[70] w-64 bg-sidebar border-r border-white/30
             flex flex-col py-5 px-3.5 overflow-y-auto
             transition-transform duration-300 ease-out shadow-2xl
             ${navAbierta ? 'translate-x-0' : '-translate-x-full'}
@@ -303,9 +307,12 @@ export default function Shell() {
               {perfil?.nombre_completo}
             </p>
             <p className="text-xs text-white/65 mb-3">{rolTexto}</p>
+            <div className="mb-2">
+              <ThemeToggle />
+            </div>
             <button
               onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 text-xs font-semibold px-3 py-2 rounded-sm border border-white/15 text-white/60 hover:text-white/90 hover:bg-white/7 transition-colors"
+              className="w-full flex items-center justify-center gap-2 text-xs font-semibold px-3 py-2 rounded-sm border border-white/15 text-white/60 hover:bg-white/10 hover:text-white transition-colors"
             >
               <>
                 <LogoutIcon className="w-4 h-4" /> Cerrar sesión
@@ -317,9 +324,7 @@ export default function Shell() {
         {/* ---- Contenido ---- */}
         <main className="flex-1 min-w-0 md:ml-64 px-5 py-8 md:px-10 max-w-6xl page-enter">
           {cargando ? (
-            <div className="flex items-center justify-center py-20 text-ink-soft text-sm">
-              Cargando…
-            </div>
+            <LoadingSkeleton />
           ) : (
             <Outlet
               context={{

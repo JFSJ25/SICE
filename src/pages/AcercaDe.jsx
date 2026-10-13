@@ -48,7 +48,7 @@ export default function AcercaDe() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Panel>
           <div className="flex items-center gap-2 mb-3">
-            <InfoOutlinedIcon className="w-5 h-5 text-sice-green" />
+            <InfoOutlinedIcon className="w-5 h-5 text-sice-green dark:text-emerald-300" />
             <h2 className="text-lg">Sobre la aplicación</h2>
           </div>
           <p className="text-sm text-ink-mid leading-relaxed">
@@ -74,12 +74,12 @@ export default function AcercaDe() {
               key={rol}
               className="border border-blue-900/[0.09] rounded-sm p-4 bg-surface"
             >
-              <Icon className="w-5 h-5 text-sice-green mb-3" />
+              <Icon className="w-5 h-5 text-sice-green mb-3 dark:text-emerald-300" />
               <p className="text-sm font-semibold text-ink">{rol}</p>
               <p className="text-xs text-ink-soft leading-relaxed mt-1">
                 {descripcion}
               </p>
-              <p className="text-xs text-ink-soft/70 mt-3">{nombre}</p>
+              <p className="text-xs text-ink mt-3">{nombre}</p>
             </div>
           ))}
         </div>

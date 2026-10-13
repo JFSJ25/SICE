@@ -8,7 +8,7 @@ import {
   Eyebrow,
   Aviso,
   Button,
-  Spinner,
+  LoadingSkeleton,
   Tabla,
   FilaTabla,
   CeldaTabla
@@ -48,11 +48,7 @@ export default function Pendientes() {
   }
 
   if (cargando)
-    return (
-      <div className="flex justify-center py-20">
-        <Spinner className="text-ink-soft" />
-      </div>
-    )
+    return <LoadingSkeleton />
   if (error) return <Aviso variant="red">{error}</Aviso>
 
   return (

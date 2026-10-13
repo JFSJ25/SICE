@@ -217,7 +217,7 @@ export default function StepEstudiantes({
               <div className="flex flex-wrap gap-3 items-center">
                 <button
                   type="button"
-                  className="text-xs text-sice-green font-semibold hover:underline"
+                  className="flex items-center gap-1 text-xs text-sice-green dark:text-emerald-300 font-semibold hover:underline"
                   onClick={() =>
                     descargarTexto(
                       'estudiantes-normalizados.csv',
@@ -284,7 +284,7 @@ export default function StepEstudiantes({
           )}
 
           <button
-            className="text-xs flex items-center text-sice-green font-semibold hover:underline self-start"
+            className="text-xs flex items-center text-sice-green dark:text-emerald-300 font-semibold hover:underline self-start"
             onClick={() => descargarCredencialesExcel(resultado.credenciales)}
           >
             <DownloadIcon className="w-4 h-4 inline align-text-bottom" /> Volver

@@ -9,7 +9,13 @@ import {
 } from '../../lib/rubricas.js'
 import { guardarCoevaluacion } from '../../lib/data.js'
 import RubricaForm, { calcularPuntaje } from '../../components/RubricaForm.jsx'
-import { Eyebrow, Aviso, Button, Spinner } from '../../components/ui/index.jsx'
+import {
+  Eyebrow,
+  Aviso,
+  Button,
+  Spinner,
+  LoadingSkeleton
+} from '../../components/ui/index.jsx'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import SendIcon from '@mui/icons-material/Send'
 
@@ -81,12 +87,7 @@ export default function CoevaluarForm() {
     }
   }
 
-  if (cargando)
-    return (
-      <div className="flex justify-center py-20">
-        <Spinner className="text-ink-soft" />
-      </div>
-    )
+  if (cargando) return <LoadingSkeleton />
 
   const maxExp = rubricaExp ? puntajeMaximo(rubricaExp) : 0
   const maxEval = rubricaEval ? puntajeMaximo(rubricaEval) : 0
@@ -97,7 +98,7 @@ export default function CoevaluarForm() {
     <div>
       <button
         onClick={() => navigate(-1)}
-        className="text-sm text-sice-green font-semibold hover:underline mb-4 block"
+        className="flex items-center gap-1 text-sm text-sice-green dark:text-emerald-300 font-semibold hover:underline mb-4"
       >
         <>
           <ArrowBackIcon className="w-4 h-4" /> Volver

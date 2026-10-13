@@ -2,6 +2,14 @@
 // Componentes UI reutilizables de SICE
 // ============================================================
 
+import { useState } from 'react'
+import Skeleton from 'react-loading-skeleton'
+import 'react-loading-skeleton/dist/skeleton.css'
+import DarkModeIcon from '@mui/icons-material/DarkMode'
+import LightModeIcon from '@mui/icons-material/LightMode'
+import CloseIcon from '@mui/icons-material/Close'
+import { useTheme } from '../../context/ThemeContext.jsx'
+
 export function Button({
   children,
   variant = 'primary',
@@ -39,9 +47,9 @@ export function Button({
 
 export function Badge({ children, variant = 'ok' }) {
   const variants = {
-    ok: 'bg-sice-green-soft text-sice-green',
-    pending: 'bg-sice-amber-soft text-sice-amber',
-    info: 'bg-gold-soft text-gold'
+    ok: 'bg-sice-green-soft text-sice-green dark:text-emerald-200',
+    pending: 'bg-sice-amber-soft text-sice-amber dark:text-amber-200',
+    info: 'bg-gold-soft text-gold dark:text-gold-dim'
   }
   return (
     <span
@@ -55,7 +63,7 @@ export function Badge({ children, variant = 'ok' }) {
 export function Panel({ children, className = '' }) {
   return (
     <div
-      className={`bg-white border border-blue-900/[0.09] rounded-DEFAULT shadow-card p-5 md:p-6 mb-4 interactive-lift ${className}`}
+      className={`bg-white dark:bg-slate-800 border border-blue-900/[0.09] dark:border-white/10 rounded-DEFAULT shadow-card p-5 md:p-6 mb-4 interactive-lift ${className}`}
     >
       {children}
     </div>
@@ -64,12 +72,13 @@ export function Panel({ children, className = '' }) {
 
 export function StatCard({ value, label, acento = 'gold' }) {
   const colores = {
-    gold: 'text-gold',
-    green: 'text-sice-green',
-    red: 'text-sice-red'
+    gold: 'text-gold dark:text-blue-400',
+    green: 'text-sice-green dark:text-emerald-400',
+    red: 'text-sice-red dark:text-red-400'
   }
+
   return (
-    <div className="bg-white border border-blue-900/[0.09] rounded-DEFAULT shadow-card px-4 py-3.5 interactive-lift">
+    <div className="bg-white dark:bg-slate-800 border border-blue-900/[0.09] dark:border-white/10 rounded-DEFAULT shadow-card px-4 py-3.5 interactive-lift">
       <div
         className={`font-display text-3xl font-bold leading-none mb-1.5 ${colores[acento]}`}
       >
@@ -80,24 +89,41 @@ export function StatCard({ value, label, acento = 'gold' }) {
   )
 }
 
-export function Aviso({ children, variant = 'amber' }) {
+export function Aviso({ children, variant = 'amber', dismissible = false }) {
+  const [visible, setVisible] = useState(true)
   const variants = {
-    amber: 'bg-sice-amber-soft border-sice-amber/20 text-sice-amber',
-    green: 'bg-sice-green-soft border-sice-green/20 text-sice-green',
-    red: 'bg-sice-red-soft   border-sice-red/20   text-sice-red'
+    amber:
+      'bg-sice-amber-soft border-sice-amber/20 text-sice-amber dark:text-amber-200',
+    green:
+      'bg-sice-green-soft border-sice-green/20 text-sice-green dark:text-emerald-200',
+    red: 'bg-sice-red-soft border-sice-red/20 text-sice-red dark:text-red-200'
   }
+
+  if (!visible) return null
+
   return (
     <div
-      className={`border flex items-center rounded-sm px-4 py-3 text-sm leading-relaxed mb-4 ${variants[variant]}`}
+      className={`border flex items-center gap-3 rounded-sm px-4 py-3 text-sm leading-relaxed mb-4 ${variants[variant]}`}
     >
-      <span>{children}</span>
+      <span className="flex-1 flex items-center gap-1">{children}</span>
+      {dismissible && (
+        <button
+          type="button"
+          onClick={() => setVisible(false)}
+          aria-label="Cerrar aviso"
+          title="Cerrar aviso"
+          className="flex-shrink-0 rounded-sm px-1.5 text-lg font-semibold leading-none opacity-70 transition hover:bg-black/10 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-current/40"
+        >
+          <CloseIcon style={{ width: '1rem', height: '1rem' }} />
+        </button>
+      )}
     </div>
   )
 }
 
 export function Eyebrow({ children }) {
   return (
-    <p className="text-xs font-semibold text-sice-green mb-1.5 tracking-wide">
+    <p className="text-xs font-semibold text-sice-green dark:text-emerald-300 mb-1.5 tracking-wide">
       {children}
     </p>
   )
@@ -111,16 +137,39 @@ export function Spinner({ className = '' }) {
   )
 }
 
+export function LoadingSkeleton() {
+  return (
+    <div className="w-full space-y-5" aria-label="Cargando contenido">
+      <div className="space-y-2">
+        <Skeleton width="7rem" height="0.75rem" />
+        <Skeleton width="min(18rem, 75%)" height="2rem" />
+        <Skeleton width="min(28rem, 90%)" height="0.9rem" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Skeleton height="7rem" borderRadius="10px" />
+        <Skeleton height="7rem" borderRadius="10px" />
+      </div>
+      <div className="rounded-DEFAULT border border-black/[0.08] dark:border-white/10 p-4">
+        <Skeleton count={4} height="1rem" className="mb-3" />
+      </div>
+    </div>
+  )
+}
+
 export function Tabla({ headers, children }) {
   return (
     <div className="overflow-x-auto rounded-DEFAULT shadow-card">
-      <table className="w-full text-sm bg-white border-collapse">
+      <table className="w-full text-sm bg-white dark:bg-slate-800 border-collapse">
         <thead>
           <tr>
             {headers.map(h => (
               <th
                 key={h}
-                className="bg-sidebar text-white/70 font-semibold text-xs tracking-wide px-4 py-3 text-left"
+                className="
+                  bg-slate-700 text-slate-100
+                  dark:bg-slate-200 dark:text-slate-800
+                  font-semibold text-sm tracking-wide px-4 py-3 text-left
+                "
               >
                 {h}
               </th>
@@ -162,7 +211,7 @@ export function Campo({ label, hint, error, children, className = '' }) {
 }
 
 const inputBase =
-  'w-full px-3 py-2.5 border border-ink/20 rounded-sm text-sm bg-white text-ink transition focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/15'
+  'w-full px-3 py-2.5 border border-ink/20 dark:border-white/20 rounded-sm text-sm bg-white dark:bg-slate-800 text-ink dark:text-slate-100 transition focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/15'
 
 export function Input({ className = '', ...props }) {
   return <input className={`${inputBase} ${className}`} {...props} />
@@ -182,5 +231,29 @@ export function Textarea({ className = '', ...props }) {
       className={`${inputBase} resize-y min-h-[80px] leading-relaxed ${className}`}
       {...props}
     />
+  )
+}
+
+export function ThemeToggle({ compact = false }) {
+  const { tema, alternarTema } = useTheme()
+  const esOscuro = tema === 'dark'
+
+  return (
+    <button
+      type="button"
+      onClick={alternarTema}
+      aria-label={esOscuro ? 'Activar modo claro' : 'Activar modo oscuro'}
+      title={esOscuro ? 'Activar modo claro' : 'Activar modo oscuro'}
+      className={`inline-flex items-center justify-center gap-2 rounded-sm border border-white/15 text-white/70 transition-colors hover:bg-white/10 hover:text-white ${
+        compact ? 'h-9 w-9' : 'w-full px-3 py-2 text-xs font-semibold'
+      }`}
+    >
+      {esOscuro ? (
+        <LightModeIcon className="w-4 h-4" />
+      ) : (
+        <DarkModeIcon className="w-4 h-4" />
+      )}
+      {!compact && <span>{esOscuro ? 'Modo claro' : 'Modo oscuro'}</span>}
+    </button>
   )
 }

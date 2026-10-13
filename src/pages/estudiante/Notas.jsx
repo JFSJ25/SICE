@@ -6,7 +6,13 @@ import {
   obtenerPromedioCoeval
 } from '../../lib/data.js'
 import { obtenerRubrica, puntajeMaximo } from '../../lib/rubricas.js'
-import { Eyebrow, Panel, Aviso, Spinner } from '../../components/ui/index.jsx'
+import {
+  Eyebrow,
+  Panel,
+  Aviso,
+  Spinner,
+  LoadingSkeleton
+} from '../../components/ui/index.jsx'
 
 const PESO_PROF = 0.7
 const PESO_COEV = 0.3
@@ -92,9 +98,7 @@ export default function Notas() {
 
   if (cargando)
     return (
-      <div className="flex justify-center py-20">
-        <Spinner className="text-ink-soft" />
-      </div>
+      <LoadingSkeleton />
     )
   if (error) return <Aviso variant="red">{error}</Aviso>
 
@@ -142,7 +146,7 @@ export default function Notas() {
                     Nota final estimada
                   </span>
                   <span
-                    className={`font-display text-2xl font-bold ${final !== null ? 'text-sice-green' : 'text-ink-soft'}`}
+                    className={`font-display text-2xl font-bold ${final !== null ? 'text-sice-green dark:text-emerald-300' : 'text-ink-soft'}`}
                   >
                     {final !== null ? final.toFixed(1) : '—'}
                     <span className="font-body text-xs text-ink-soft font-normal ml-1">
@@ -152,7 +156,7 @@ export default function Notas() {
                 </div>
 
                 {incompleto && (
-                  <p className="text-xs text-sice-amber mt-2">
+                  <p className="text-xs text-sice-amber dark:text-sice-amber-soft mt-2">
                     Nota provisional — todavía falta que el docente o los
                     compañeros califiquen.
                   </p>
