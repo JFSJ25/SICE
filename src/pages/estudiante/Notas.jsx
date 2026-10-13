@@ -68,14 +68,16 @@ export default function Notas() {
             : null
           const coevSobre100 = coeval ? (coeval.promedio / maxCoev) * 100 : null
 
-          let final = null
-          if (docSobre100 !== null && coevSobre100 !== null) {
-            final = (docSobre100 * PESO_PROF + coevSobre100 * PESO_COEV) / 10
-          } else if (docSobre100 !== null) {
-            final = (docSobre100 * PESO_PROF) / 10
-          } else if (coevSobre100 !== null) {
-            final = (coevSobre100 * PESO_COEV) / 10
-          }
+          // La rúbrica docente del expositor vale 70 puntos y la
+          // exposición oral se obtiene de la coevaluación estudiantil.
+          // Cada componente se normaliza por su propio máximo antes de
+          // aplicar la ponderación 70/30.
+          const final =
+            docSobre100 !== null || coevSobre100 !== null
+              ? ((docSobre100 ?? 0) * PESO_PROF +
+                  (coevSobre100 ?? 0) * PESO_COEV) /
+                10
+              : null
 
           return {
             hs,

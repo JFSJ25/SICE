@@ -5,7 +5,9 @@
 --     Siempre 15 / Frecuentemente 10 / A veces 5 / Nunca 0  (antes máx. 10).
 --   • "Referencias bibliográficas en diapositivas": ahora 3 niveles
 --     Siempre 10 / A veces 5 / No 0  (antes máx. 15, con 4 opciones).
---   El total de la categoría Diapositivas sigue siendo 40 pts.
+--   La calificación docente del expositor suma 70 pts (Informe + Diapositivas).
+--   La exposición oral se evalúa únicamente mediante la coevaluación estudiantil.
+--   La aplicación del cuestionario se evalúa únicamente en COEVAL_EVALUADOR.
 --
 -- Ejecutar UNA SOLA VEZ, después de aplicar schema.sql,
 -- en el SQL Editor de Supabase Studio.
@@ -19,6 +21,8 @@ declare
 begin
 
   -- ================= CALIF_EXPOSITOR =================
+  -- Solo Informe (30 pts) + Diapositivas (40 pts) = 70 pts.
+  -- La exposición oral NO se califica aquí: se evalúa en COEVAL_EXPOSITOR.
   insert into public.rubricas (tipo, nombre, nota_especial) values (
     'CALIF_EXPOSITOR',
     'Calificación del expositor (docente)',
@@ -104,33 +108,9 @@ begin
     (k_id, 'A veces',   5, 2),
     (k_id, 'No',        0, 3);
 
-  -- --- Exposición oral (30 pts) ---
-  insert into public.rubrica_categorias (rubrica_id, nombre, orden)
-    values (r_id, 'Exposición oral', 3) returning id into c_id;
-
-  insert into public.rubrica_criterios (categoria_id, nombre, observacion, orden) values (
-    c_id,
-    'Realiza lecturas extensas de información',
-    'Usar organizadores gráficos o imágenes en vez de leer texto extenso en las diapositivas.',
-    1
-  ) returning id into k_id;
-  insert into public.rubrica_opciones (criterio_id, etiqueta, puntos, orden) values
-    (k_id, 'No',      15, 1),
-    (k_id, 'A veces', 10, 2),
-    (k_id, 'Siempre',  5, 3);
-
-  insert into public.rubrica_criterios (categoria_id, nombre, observacion, orden) values (
-    c_id,
-    'Transmite claramente la información',
-    'Una buena investigación y preparación ayuda a manejar el nerviosismo propio de exponer ante un público.',
-    2
-  ) returning id into k_id;
-  insert into public.rubrica_opciones (criterio_id, etiqueta, puntos, orden) values
-    (k_id, 'Siempre',  15, 1),
-    (k_id, 'A veces',  10, 2),
-    (k_id, 'No',        5, 3);
-
   -- ================= CALIF_EVALUADOR =================
+  -- Solo Informe (30 pts) + Cuestionario (40 pts) = 70 pts.
+  -- La aplicación del cuestionario NO se califica aquí: se evalúa en COEVAL_EVALUADOR.
   insert into public.rubricas (tipo, nombre) values (
     'CALIF_EVALUADOR', 'Calificación del evaluador (docente)'
   ) returning id into r_id;
@@ -191,35 +171,12 @@ begin
     (k_id, 'A veces',         5, 3),
     (k_id, 'Nunca',           0, 4);
 
-  -- --- Aplicación del cuestionario (30 pts) ---
-  insert into public.rubrica_categorias (rubrica_id, nombre, orden)
-    values (r_id, 'Aplicación del cuestionario', 3) returning id into c_id;
-
-  insert into public.rubrica_criterios (categoria_id, nombre, observacion, orden) values (
-    c_id,
-    'Herramienta informática utilizada',
-    'Ejemplos apropiados: Quizizz, Formularios de Google. Requiere visto bueno previo del profesor.',
-    1
-  ) returning id into k_id;
-  insert into public.rubrica_opciones (criterio_id, etiqueta, puntos, orden) values
-    (k_id, 'Apropiada',                      15, 1),
-    (k_id, 'No apropiada',                   10, 2),
-    (k_id, 'No se aplica el cuestionario',    5, 3);
-
-  insert into public.rubrica_criterios (categoria_id, nombre, observacion, orden) values (
-    c_id,
-    'Cantidad de preguntas elaboradas',
-    'Entre 5 y 10 preguntas, balanceando teoría y ejercicios; al menos 2 de resolución práctica; '
-    'máximo 15 min de aplicación.',
-    2
-  ) returning id into k_id;
-  insert into public.rubrica_opciones (criterio_id, etiqueta, puntos, orden) values
-    (k_id, 'Adecuada',                        15, 1),
-    (k_id, 'No adecuada',                     10, 2),
-    (k_id, 'Insuficiente o no se aplica',      5, 3);
+  -- (La categoría "Aplicación del cuestionario" ya no se califica aquí: se evalúa
+  --  únicamente en COEVAL_EVALUADOR. Total docente del evaluador: 30 + 40 = 70 pts.)
 
   -- ================= COEVAL_EXPOSITOR =================
   -- Categoría única: Exposición oral (ponderado a 50 % de la nota de coevaluación)
+  -- Es el único lugar donde se evalúa la exposición oral (ver migración incorporada arriba).
   insert into public.rubricas (tipo, nombre) values (
     'COEVAL_EXPOSITOR', 'Coevaluación de expositores (compañeros)'
   ) returning id into r_id;
