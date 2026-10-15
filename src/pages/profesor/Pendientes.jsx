@@ -47,8 +47,7 @@ export default function Pendientes() {
     }
   }
 
-  if (cargando)
-    return <LoadingSkeleton />
+  if (cargando) return <LoadingSkeleton />
   if (error) return <Aviso variant="red">{error}</Aviso>
 
   return (

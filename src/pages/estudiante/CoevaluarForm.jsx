@@ -4,11 +4,10 @@ import { useAuth } from '../../context/AuthContext.jsx'
 import { useOutletContext } from 'react-router-dom'
 import {
   obtenerRubrica,
-  puntajeMaximo,
   leerRespuestas
 } from '../../lib/rubricas.js'
 import { guardarCoevaluacion } from '../../lib/data.js'
-import RubricaForm, { calcularPuntaje } from '../../components/RubricaForm.jsx'
+import RubricaForm from '../../components/RubricaForm.jsx'
 import {
   Eyebrow,
   Aviso,
@@ -26,12 +25,17 @@ export default function CoevaluarForm() {
   const { perfil } = useAuth()
   const { contexto } = useOutletContext()
 
-  const { grupoNumero, tema, hemisemestreId, hemisemestreNombre } = state ?? {}
+  const {
+    grupoNumero,
+    tema,
+    hemisemestreId,
+    hemisemestreNombre,
+    miembros = []
+  } = state ?? {}
 
   const [rubricaExp, setRubricaExp] = useState(null)
   const [rubricaEval, setRubricaEval] = useState(null)
-  const [selExp, setSelExp] = useState(new Map())
-  const [selEval, setSelEval] = useState(new Map())
+  const [selecciones, setSelecciones] = useState({})
   const [cargando, setCargando] = useState(true)
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
@@ -58,9 +62,22 @@ export default function CoevaluarForm() {
   }
 
   async function handleEnviar() {
-    const exp = leerRespuestas(rubricaExp, selExp)
-    const eval_ = leerRespuestas(rubricaEval, selEval)
-    if (!exp.completo || !eval_.completo) {
+    const evaluaciones = miembros.map(miembro => {
+      const rubrica =
+        miembro.rolGrupo === 'evaluador' ? rubricaEval : rubricaExp
+      const resultado = leerRespuestas(
+        rubrica,
+        selecciones[miembro.usuarioId] ?? new Map()
+      )
+      return {
+        estudianteEvaluadoId: miembro.usuarioId,
+        rubricaId: rubrica.id,
+        respuestas: resultado.respuestas,
+        puntaje: resultado.puntaje,
+        completo: resultado.completo
+      }
+    })
+    if (evaluaciones.some(evaluacion => !evaluacion.completo)) {
       setError('Falta seleccionar una opción en algún criterio.')
       return
     }
@@ -71,12 +88,7 @@ export default function CoevaluarForm() {
         evaluadorId: perfil.id,
         grupoId,
         hemisemestreId,
-        rubricaExpositorId: rubricaExp.id,
-        respExpositor: exp.respuestas,
-        puntajeExpositor: exp.puntaje,
-        rubricaEvaluadorId: rubricaEval.id,
-        respEvaluador: eval_.respuestas,
-        puntajeEvaluador: eval_.puntaje
+        evaluaciones
       })
       setExito(true)
       setTimeout(() => navigate('/estudiante/coevaluar'), 900)
@@ -88,11 +100,6 @@ export default function CoevaluarForm() {
   }
 
   if (cargando) return <LoadingSkeleton />
-
-  const maxExp = rubricaExp ? puntajeMaximo(rubricaExp) : 0
-  const maxEval = rubricaEval ? puntajeMaximo(rubricaEval) : 0
-  const ptsExp = rubricaExp ? calcularPuntaje(rubricaExp, selExp) : 0
-  const ptsEval = rubricaEval ? calcularPuntaje(rubricaEval, selEval) : 0
 
   return (
     <div>
@@ -115,50 +122,43 @@ export default function CoevaluarForm() {
       {error && <Aviso variant="red">{error}</Aviso>}
       {exito && <Aviso variant="green">Coevaluación enviada.</Aviso>}
 
-      {/* Sección expositores */}
-      <div className="bg-white border border-black/[0.11] rounded-DEFAULT shadow-card p-5 md:p-6 mb-4">
-        <h3 className="mb-4">Exposición oral</h3>
-        {rubricaExp && (
-          <RubricaForm
-            rubrica={rubricaExp}
-            seleccionadas={selExp}
-            onCambio={(critId, opId) =>
-              setSelExp(prev => new Map(prev).set(critId, opId))
-            }
-            prefijo="exp_"
-          />
-        )}
-      </div>
-
-      {/* Sección evaluador */}
-      <div className="bg-white border border-black/[0.11] rounded-DEFAULT shadow-card p-5 md:p-6 mb-4">
-        <h3 className="mb-4">Aplicación del cuestionario</h3>
-        {rubricaEval && (
-          <RubricaForm
-            rubrica={rubricaEval}
-            seleccionadas={selEval}
-            onCambio={(critId, opId) =>
-              setSelEval(prev => new Map(prev).set(critId, opId))
-            }
-            prefijo="eval_"
-          />
-        )}
-      </div>
+      {miembros.map(miembro => {
+        const rubrica =
+          miembro.rolGrupo === 'evaluador' ? rubricaEval : rubricaExp
+        const seleccionadas =
+          selecciones[miembro.usuarioId] ?? new Map()
+        return (
+          <div
+            key={miembro.usuarioId}
+            className="bg-white border border-black/[0.11] rounded-DEFAULT shadow-card p-5 md:p-6 mb-4"
+          >
+            <h3 className="text-base mb-4">{miembro.nombre}</h3>
+            {rubrica && (
+              <RubricaForm
+                rubrica={rubrica}
+                seleccionadas={seleccionadas}
+                onCambio={(critId, opId) =>
+                  setSelecciones(prev => ({
+                    ...prev,
+                    [miembro.usuarioId]: new Map(seleccionadas).set(
+                      critId,
+                      opId
+                    )
+                  }))
+                }
+                prefijo={`${miembro.usuarioId}_`}
+              />
+            )}
+          </div>
+        )
+      })}
 
       {/* Barra de acción */}
       <div className="sticky bottom-0 bg-sidebar rounded-sm px-5 py-3.5 flex justify-between items-center gap-4 flex-wrap shadow-md">
         <div className="text-white/70 text-xs flex gap-4">
           <span>
-            Exposición:{' '}
-            <strong className="text-gold-dim">
-              {ptsExp}/{maxExp}
-            </strong>
-          </span>
-          <span>
-            Cuestionario:{' '}
-            <strong className="text-gold-dim">
-              {ptsEval}/{maxEval}
-            </strong>
+            {miembros.length} integrante{miembros.length === 1 ? '' : 's'} por
+            evaluar
           </span>
         </div>
         <Button onClick={handleEnviar} disabled={guardando || exito}>

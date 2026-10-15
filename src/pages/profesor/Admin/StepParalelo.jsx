@@ -228,10 +228,7 @@ export default function StepParalelo({
       .catch(e => setError(e.message))
   }
 
-  if (cargando)
-    return (
-      <LoadingSkeleton />
-    )
+  if (cargando) return <LoadingSkeleton />
 
   return (
     <Panel>

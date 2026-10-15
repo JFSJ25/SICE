@@ -41,7 +41,14 @@ export default function Coevaluar() {
       )
       const otros = todos.filter(g => g.id !== contexto.grupoId)
       const checks = await Promise.all(
-        otros.map(g => yaCoevaluoGrupo(perfil.id, g.id, hemisemestreActivo.id))
+        otros.map(g =>
+          yaCoevaluoGrupo(
+            perfil.id,
+            g.id,
+            hemisemestreActivo.id,
+            g.miembros.map(m => m.usuarioId)
+          )
+        )
       )
       setGrupos(otros)
       setEstados(checks)
@@ -52,10 +59,7 @@ export default function Coevaluar() {
     }
   }
 
-  if (cargando)
-    return (
-      <LoadingSkeleton />
-    )
+  if (cargando) return <LoadingSkeleton />
   if (error) return <Aviso variant="red">{error}</Aviso>
 
   const pendientes = grupos.filter((_, i) => !estados[i])
@@ -86,31 +90,22 @@ export default function Coevaluar() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
           {grupos.map((g, i) => {
             const hecho = estados[i]
-            const expositores = g.miembros
-              .filter(m => m.rolGrupo === 'expositor')
-              .map(m => m.nombre)
-              .join(', ')
-            const evaluador = g.miembros.find(m => m.rolGrupo === 'evaluador')
+            const integrantes = g.miembros.map(m => m.nombre).join(', ')
             return (
               <div
                 key={g.id}
                 className="bg-white border border-black/[0.11] rounded-DEFAULT shadow-card p-5"
               >
-                <p className="text-[11px] font-bold text-sice-green mb-1">
+                <p className="text-[11px] font-bold text-sice-green dark:text-emerald-300 mb-1">
                   Grupo {g.numero}
                 </p>
                 <h3 className="text-base mb-3 leading-snug">{g.tema}</h3>
                 <p className="text-xs text-ink-soft mb-1">
-                  <strong>Expositores:</strong> {expositores || '—'}
-                </p>
-                <p className="text-xs text-ink-soft mb-4">
-                  <strong>Evaluador:</strong> {evaluador?.nombre ?? '—'}
+                  <strong>Integrantes:</strong> {integrantes || '—'}
                 </p>
                 {hecho ? (
-                  <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-sice-green-soft text-sice-green">
-                    <>
-                      <CheckCircleIcon className="w-4 h-4" /> Ya coevaluado
-                    </>
+                  <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-sice-green-soft text-sice-green dark:text-emerald-300">
+                    <CheckCircleIcon className="w-4 h-4" /> Ya coevaluado
                   </span>
                 ) : (
                   <Button
@@ -121,7 +116,8 @@ export default function Coevaluar() {
                           grupoNumero: g.numero,
                           tema: g.tema,
                           hemisemestreId: hemisemestreActivo.id,
-                          hemisemestreNombre: hemisemestreActivo.nombre
+                          hemisemestreNombre: hemisemestreActivo.nombre,
+                          miembros: g.miembros
                         }
                       })
                     }

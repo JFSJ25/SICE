@@ -124,10 +124,7 @@ export default function Calificar() {
     cat.rubrica_criterios.every(crit => seleccionadas.has(crit.id))
   )
 
-  if (cargando)
-    return (
-      <LoadingSkeleton />
-    )
+  if (cargando) return <LoadingSkeleton />
   if (error && !rubrica) return <Aviso variant="red">{error}</Aviso>
 
   const max = rubrica ? puntajeMaximo(rubrica) : 0

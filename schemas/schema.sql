@@ -230,12 +230,19 @@ create table public.coevaluaciones (
   id                uuid primary key default gen_random_uuid(),
   evaluador_id      uuid    not null references public.usuarios(id),
   grupo_evaluado_id uuid    not null references public.grupos(id),
+  estudiante_evaluado_id uuid not null references public.usuarios(id),
   hemisemestre_id   uuid    not null references public.hemisemestres(id),
   rubrica_id        uuid    not null references public.rubricas(id),
   respuestas        jsonb   not null,
   puntaje           numeric not null,
   actualizado_en    timestamptz not null default now(),
-  unique (evaluador_id, grupo_evaluado_id, hemisemestre_id, rubrica_id)
+  unique (
+    evaluador_id,
+    grupo_evaluado_id,
+    hemisemestre_id,
+    estudiante_evaluado_id,
+    rubrica_id
+  )
 );
 
 -- Trigger: impide auto-coevaluación (segunda línea de defensa tras la UI)
@@ -248,6 +255,13 @@ begin
       and gm.grupo_id   = new.grupo_evaluado_id
   ) then
     raise exception 'Un estudiante no puede coevaluar a su propio grupo';
+  end if;
+  if not exists (
+    select 1 from public.grupo_miembros gm
+    where gm.usuario_id = new.estudiante_evaluado_id
+      and gm.grupo_id = new.grupo_evaluado_id
+  ) then
+    raise exception 'El estudiante evaluado no pertenece al grupo';
   end if;
   return new;
 end;
@@ -509,7 +523,8 @@ grant execute on function public.reabrir_asignacion(uuid) to authenticated;
 create or replace function public.obtener_coeval_promedio(
   p_grupo_id        uuid,
   p_hemisemestre_id uuid,
-  p_rubrica_id      uuid
+  p_rubrica_id      uuid,
+  p_estudiante_id   uuid
 ) returns table(promedio numeric, cantidad bigint)
 language plpgsql
 security definer
@@ -532,12 +547,13 @@ begin
     from public.coevaluaciones c
     where c.grupo_evaluado_id = p_grupo_id
       and c.hemisemestre_id   = p_hemisemestre_id
-      and c.rubrica_id        = p_rubrica_id;
+      and c.rubrica_id        = p_rubrica_id
+      and c.estudiante_evaluado_id = p_estudiante_id;
 end;
 $$;
 
-revoke all    on function public.obtener_coeval_promedio(uuid, uuid, uuid) from public;
-grant execute on function public.obtener_coeval_promedio(uuid, uuid, uuid) to authenticated;
+revoke all    on function public.obtener_coeval_promedio(uuid, uuid, uuid, uuid) from public;
+grant execute on function public.obtener_coeval_promedio(uuid, uuid, uuid, uuid) to authenticated;
 
 -- ============================================================
 -- 7. ROW LEVEL SECURITY

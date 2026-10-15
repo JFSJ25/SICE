@@ -647,52 +647,140 @@ export async function obtenerPendientesDocente(grupos, hemisemestreId) {
   return pendientes
 }
 
+export async function obtenerReporteNotasHemisemestre(
+  paraleloId,
+  hemisemestreId,
+  rubricas
+) {
+  const grupos = await obtenerGruposConDetalle(paraleloId, hemisemestreId)
+  const estudiantes = grupos.flatMap(grupo => grupo.miembros)
+  const ids = estudiantes.map(estudiante => estudiante.usuarioId)
+  const mapaCalificaciones = await obtenerMapaCalificacionesDocente(
+    ids,
+    hemisemestreId
+  )
+  const totalEstudiantes = estudiantes.length
+  const promediosPorEstudiante = new Map(
+    (
+      await Promise.all(
+        grupos.flatMap(grupo =>
+          grupo.miembros.map(async estudiante => [
+            estudiante.usuarioId,
+            await obtenerPromedioCoeval(
+              grupo.id,
+              hemisemestreId,
+              estudiante.rolGrupo === 'evaluador'
+                ? rubricas.coevEvaluador.id
+                : rubricas.coevExpositor.id,
+              estudiante.usuarioId
+            )
+          ])
+        )
+      )
+    )
+  )
+
+  const filas = []
+  const pendientesDocente = []
+  const pendientesCoevaluacion = new Map()
+
+  grupos.forEach(grupo => {
+    const esperadas = totalEstudiantes - grupo.miembros.length
+    grupo.miembros.forEach(estudiante => {
+      const esEvaluador = estudiante.rolGrupo === 'evaluador'
+      const calificacion = mapaCalificaciones.get(estudiante.usuarioId)
+      const maxDoc = esEvaluador
+        ? rubricas.docEvaluadorMax
+        : rubricas.docExpositorMax
+      const rubricaDocente = esEvaluador
+        ? rubricas.docEvaluador.id
+        : rubricas.docExpositor.id
+      const maxCoev = esEvaluador
+        ? rubricas.coevEvaluadorMax
+        : rubricas.coevExpositorMax
+      const promedio = promediosPorEstudiante.get(estudiante.usuarioId)
+      const calificacionValida =
+        calificacion?.rubrica_id === rubricaDocente ? calificacion : null
+      const docente = calificacionValida
+        ? (Number(calificacionValida.puntaje) / maxDoc) * 100
+        : null
+      const coevaluacion =
+        promedio && promedio.cantidad >= esperadas
+          ? (promedio.promedio / maxCoev) * 100
+          : null
+
+      if (!calificacionValida) pendientesDocente.push(estudiante.nombre)
+      if (esperadas > 0 && (!promedio || promedio.cantidad < esperadas)) {
+        pendientesCoevaluacion.set(grupo.id, {
+          grupoNumero: grupo.numero,
+          faltantes: esperadas - (promedio?.cantidad ?? 0)
+        })
+      }
+
+      filas.push({
+        nombre: estudiante.nombre,
+        usuarioId: estudiante.usuarioId,
+        grupoNumero: grupo.numero,
+        rol: esEvaluador ? 'Evaluador' : 'Expositor',
+        docente,
+        coevaluacion,
+        final:
+          docente !== null && coevaluacion !== null
+            ? (docente * 0.7 + coevaluacion * 0.3) / 10
+            : null
+      })
+    })
+  })
+
+  return {
+    filas,
+    pendientesDocente,
+    pendientesCoevaluacion: [...pendientesCoevaluacion.values()],
+    totalEstudiantes
+  }
+}
+
 // ---- Coevaluaciones ----
 
-export async function yaCoevaluoGrupo(evaluadorId, grupoId, hemisemestreId) {
-  const { count, error } = await supabase
+export async function yaCoevaluoGrupo(
+  evaluadorId,
+  grupoId,
+  hemisemestreId,
+  estudianteIds = null
+) {
+  const { data, error } = await supabase
     .from('coevaluaciones')
-    .select('id', { count: 'exact', head: true })
+    .select('estudiante_evaluado_id')
     .eq('evaluador_id', evaluadorId)
     .eq('grupo_evaluado_id', grupoId)
     .eq('hemisemestre_id', hemisemestreId)
   if (error) throw error
-  return count > 0
+  if (!estudianteIds) return (data ?? []).length > 0
+  const evaluados = new Set(
+    (data ?? []).map(fila => fila.estudiante_evaluado_id)
+  )
+  return estudianteIds.every(id => evaluados.has(id))
 }
 
 export async function guardarCoevaluacion({
   evaluadorId,
   grupoId,
   hemisemestreId,
-  rubricaExpositorId,
-  respExpositor,
-  puntajeExpositor,
-  rubricaEvaluadorId,
-  respEvaluador,
-  puntajeEvaluador
+  evaluaciones
 }) {
-  const filas = [
-    {
+  const filas = evaluaciones.map(evaluacion => ({
       evaluador_id: evaluadorId,
       grupo_evaluado_id: grupoId,
       hemisemestre_id: hemisemestreId,
-      rubrica_id: rubricaExpositorId,
-      respuestas: respExpositor,
-      puntaje: puntajeExpositor,
+      estudiante_evaluado_id: evaluacion.estudianteEvaluadoId,
+      rubrica_id: evaluacion.rubricaId,
+      respuestas: evaluacion.respuestas,
+      puntaje: evaluacion.puntaje,
       actualizado_en: new Date().toISOString()
-    },
-    {
-      evaluador_id: evaluadorId,
-      grupo_evaluado_id: grupoId,
-      hemisemestre_id: hemisemestreId,
-      rubrica_id: rubricaEvaluadorId,
-      respuestas: respEvaluador,
-      puntaje: puntajeEvaluador,
-      actualizado_en: new Date().toISOString()
-    }
-  ]
+    }))
   const { error } = await supabase.from('coevaluaciones').upsert(filas, {
-    onConflict: 'evaluador_id,grupo_evaluado_id,hemisemestre_id,rubrica_id'
+    onConflict:
+      'evaluador_id,grupo_evaluado_id,hemisemestre_id,estudiante_evaluado_id,rubrica_id'
   })
   if (error) throw error
 }
@@ -700,12 +788,14 @@ export async function guardarCoevaluacion({
 export async function obtenerPromedioCoeval(
   grupoId,
   hemisemestreId,
-  rubricaId
+  rubricaId,
+  estudianteId
 ) {
   const { data, error } = await supabase.rpc('obtener_coeval_promedio', {
     p_grupo_id: grupoId,
     p_hemisemestre_id: hemisemestreId,
-    p_rubrica_id: rubricaId
+    p_rubrica_id: rubricaId,
+    p_estudiante_id: estudianteId
   })
   if (error) throw error
   const fila = data?.[0]

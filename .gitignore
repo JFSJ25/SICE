@@ -19,6 +19,7 @@ Thumbs.db
 # Datos y salidas auxiliares locales
 mnt/
 supabase/.temp/
+supabase/migrations/
 
 # Logs
 *.log

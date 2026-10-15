@@ -106,10 +106,7 @@ export default function MiGrupo() {
     }))
   }
 
-  if (cargando)
-    return (
-      <LoadingSkeleton />
-    )
+  if (cargando) return <LoadingSkeleton />
   if (error && grupos.length === 0) return <Aviso variant="red">{error}</Aviso>
   if (!contexto)
     return (
@@ -172,7 +169,7 @@ export default function MiGrupo() {
           )
           return (
             <Panel key={grupo.id}>
-              <p className="text-[11px] font-bold text-sice-green mb-1">
+              <p className="text-[11px] font-bold text-sice-green dark:text-emerald-300 mb-1">
                 Grupo {grupo.numero}
               </p>
               <h3 className="text-base mb-3 leading-snug">{grupo.tema}</h3>

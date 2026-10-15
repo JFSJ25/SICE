@@ -74,23 +74,21 @@ export default function Grupos() {
       const maxDocEval = puntajeMaximo(rubricaEval)
       const maxCoevExp = puntajeMaximo(rubricaCoevExp)
       const maxCoevEval = puntajeMaximo(rubricaCoevEval)
-      const promediosPorGrupo = new Map(
+      const promediosPorEstudiante = new Map(
         await Promise.all(
-          gs.map(async g => {
-            const [exp, eval_] = await Promise.all([
-              obtenerPromedioCoeval(
+          gs.flatMap(g =>
+            g.miembros.map(async miembro => [
+              miembro.usuarioId,
+              await obtenerPromedioCoeval(
                 g.id,
                 hemisemestreActivo.id,
-                rubricaCoevExp.id
-              ),
-              obtenerPromedioCoeval(
-                g.id,
-                hemisemestreActivo.id,
-                rubricaCoevEval.id
+                miembro.rolGrupo === 'evaluador'
+                  ? rubricaCoevEval.id
+                  : rubricaCoevExp.id,
+                miembro.usuarioId
               )
             ])
-            return [g.id, { exp, eval_ }]
-          })
+          )
         )
       )
       const notas = new Map()
@@ -99,14 +97,13 @@ export default function Grupos() {
         0
       )
       gs.forEach(g => {
-        const promedios = promediosPorGrupo.get(g.id)
         const coevaluacionesEsperadas = totalEstudiantes - g.miembros.length
         g.miembros.forEach(m => {
           const calif = mapa.get(m.usuarioId)
           const esEvaluador = m.rolGrupo === 'evaluador'
           const maxDoc = esEvaluador ? maxDocEval : maxDocExp
           const maxCoev = esEvaluador ? maxCoevEval : maxCoevExp
-          const promedio = esEvaluador ? promedios.eval_ : promedios.exp
+          const promedio = promediosPorEstudiante.get(m.usuarioId)
           const docente = calif ? (calif.puntaje / maxDoc) * 100 : null
           const coevaluacion = promedio
             ? (promedio.promedio / maxCoev) * 100
@@ -150,10 +147,7 @@ export default function Grupos() {
     }
   }
 
-  if (cargando)
-    return (
-      <LoadingSkeleton />
-    )
+  if (cargando) return <LoadingSkeleton />
   if (error && grupos.length === 0) return <Aviso variant="red">{error}</Aviso>
   if (!contexto)
     return (
@@ -297,7 +291,7 @@ function CardGrupo({ grupo, mapaCalif, mapaNotas, onCalificar }) {
                   {m.nombre}
                 </p>
                 <p
-                  className={`text-xs mt-0.5 ${esEval ? 'text-sice-green font-semibold' : 'text-ink-soft'}`}
+                  className={`text-xs mt-0.5 ${esEval ? 'text-sice-green font-semibold dark:text-emerald-400' : 'text-ink-soft'}`}
                 >
                   {rolLabel}
                   {m.lider ? '  Líder' : ''}

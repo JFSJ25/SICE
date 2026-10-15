@@ -16,6 +16,7 @@ import FactCheckIcon from '@mui/icons-material/FactCheck'
 import GradeIcon from '@mui/icons-material/Grade'
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts'
+import AssessmentIcon from '@mui/icons-material/Assessment'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import LogoutIcon from '@mui/icons-material/Logout'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
@@ -135,6 +136,11 @@ export default function Shell() {
       to: '/profesor/estudiantes',
       label: 'Contraseñas',
       Icon: ManageAccountsIcon
+    },
+    {
+      to: '/profesor/reportes',
+      label: 'Reportes de notas',
+      Icon: AssessmentIcon
     }
   ]
   const navEstudiante = [

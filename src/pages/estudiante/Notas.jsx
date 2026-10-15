@@ -59,7 +59,12 @@ export default function Notas() {
           const [califDoc, coeval] = await Promise.all([
             obtenerCalificacionDocente(perfil.id, hs.id, rubricaDoc.id),
             contexto.grupoId
-              ? obtenerPromedioCoeval(contexto.grupoId, hs.id, rubricaCoev.id)
+              ? obtenerPromedioCoeval(
+                  contexto.grupoId,
+                  hs.id,
+                  rubricaCoev.id,
+                  perfil.id
+                )
               : null
           ])
 
@@ -98,10 +103,7 @@ export default function Notas() {
     }
   }
 
-  if (cargando)
-    return (
-      <LoadingSkeleton />
-    )
+  if (cargando) return <LoadingSkeleton />
   if (error) return <Aviso variant="red">{error}</Aviso>
 
   return (

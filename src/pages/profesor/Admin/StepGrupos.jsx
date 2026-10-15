@@ -95,10 +95,7 @@ export default function StepGrupos({
     }
   }
 
-  if (cargando)
-    return (
-      <LoadingSkeleton />
-    )
+  if (cargando) return <LoadingSkeleton />
 
   return (
     <div className="flex flex-col gap-4">

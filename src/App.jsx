@@ -18,6 +18,7 @@ import CoevaluarForm from './pages/estudiante/CoevaluarForm.jsx'
 import Notas from './pages/estudiante/Notas.jsx'
 import Cuenta from './pages/Cuenta.jsx'
 import Estudiantes from './pages/profesor/Estudiantes.jsx'
+import Reportes from './pages/profesor/Reportes.jsx'
 import AcercaDe from './pages/AcercaDe.jsx'
 
 import './App.css'
@@ -150,6 +151,14 @@ export default function App() {
               element={
                 <RequiereProfesor>
                   <Estudiantes />
+                </RequiereProfesor>
+              }
+            />
+            <Route
+              path="profesor/reportes"
+              element={
+                <RequiereProfesor>
+                  <Reportes />
                 </RequiereProfesor>
               }
             />
