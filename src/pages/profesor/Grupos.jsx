@@ -368,11 +368,13 @@ function CardGrupo({ grupo, mapaCalif, mapaNotas, onCalificar }) {
               <div className="flex flex-col gap-2">
                 <DetalleNota
                   label="Calificación docente (70%)"
-                  valor={detalle.nota?.docente}
+                  valor={detalle.nota?.docente * 0.7}
+                  ponderacion={70}
                 />
                 <DetalleNota
                   label="Promedio coevaluación (30%)"
-                  valor={detalle.nota?.coevaluacion}
+                  valor={detalle.nota?.coevaluacion * 0.3}
+                  ponderacion={30}
                 />
                 <div className="pt-3 mt-2 border-t border-black/10 dark:border-white/15">
                   <DetalleNota label="Nota final" valor={detalle.nota?.final} />
@@ -386,13 +388,13 @@ function CardGrupo({ grupo, mapaCalif, mapaNotas, onCalificar }) {
   )
 }
 
-function DetalleNota({ label, valor }) {
+function DetalleNota({ label, valor, ponderacion = 100 }) {
   return (
     <div className="flex justify-between items-baseline gap-3 text-sm">
       <span className="text-ink-soft">{label}</span>
       <span className="font-bold">
         {valor !== null && valor !== undefined
-          ? `${valor.toFixed(1)} / 100`
+          ? `${valor.toFixed(1)} / ${ponderacion}`
           : 'Pendiente'}
       </span>
     </div>

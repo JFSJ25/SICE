@@ -299,16 +299,6 @@ function BuilderNuevoGrupo({
       onError('Todos los grupos deben tener un líder.')
       return
     }
-    if (
-      seleccionados.size > 3 &&
-      !Array.from(seleccionados.values()).some(m => m.rolGrupo === 'evaluador')
-    ) {
-      onError(
-        'Los grupos de más de 3 estudiantes deben tener al menos un evaluador.'
-      )
-      return
-    }
-
     const miembros = Array.from(seleccionados.entries()).map(
       ([usuarioId, m]) => ({
         usuarioId,
@@ -541,8 +531,6 @@ function TarjetaGrupo({
   )
   const requiereNuevoLider = miembroMover?.lider === true
   const mueveEvaluador = miembroMover?.rolGrupo === 'evaluador'
-  const integrantesOrigenDespues = grupo.miembros.length - 1
-  const requiereNuevoEvaluador = mueveEvaluador && integrantesOrigenDespues > 3
   const miembrosOrigenDisponibles = grupo.miembros.filter(
     m => m.usuarioId !== modoMover?.usuarioId
   )
@@ -621,8 +609,6 @@ function TarjetaGrupo({
     (grupoDestinoSeleccionado?.miembros ?? []).filter(
       m => m.rolGrupo === 'evaluador'
     ).length + (rolDestino === 'evaluador' ? 1 : 0)
-  const integrantesDestino =
-    (grupoDestinoSeleccionado?.miembros.length ?? 0) + 1
   const lideresDestino = (grupoDestinoSeleccionado?.miembros ?? []).filter(
     m => m.lider
   ).length
@@ -636,22 +622,12 @@ function TarjetaGrupo({
       setErrorMovimiento('Selecciona el nuevo líder del grupo de origen.')
       return
     }
-    if (requiereNuevoEvaluador && !nuevoEvaluadorOrigenId) {
-      setErrorMovimiento('Selecciona el nuevo evaluador del grupo de origen.')
-      return
-    }
     if (lideresDestino !== 1) {
       setErrorMovimiento('El grupo destino debe tener exactamente un líder.')
       return
     }
     if (evaluadoresDestino > 1) {
       setErrorMovimiento('El grupo destino solo puede tener un evaluador.')
-      return
-    }
-    if (integrantesDestino > 3 && evaluadoresDestino === 0) {
-      setErrorMovimiento(
-        'Los grupos de más de 3 estudiantes deben tener un evaluador.'
-      )
       return
     }
 
@@ -1035,7 +1011,7 @@ function TarjetaGrupo({
                   }}
                 >
                   <option value="">
-                    {requiereNuevoEvaluador ? '— Seleccionar —' : '— Ninguno —'}
+                    — Ninguno —
                   </option>
                   {miembrosOrigenDisponibles.map(m => (
                     <option key={m.usuarioId} value={m.usuarioId}>
@@ -1043,12 +1019,10 @@ function TarjetaGrupo({
                     </option>
                   ))}
                 </Select>
-                {!requiereNuevoEvaluador && (
-                  <p className="text-xs text-ink-soft mt-1">
-                    Es opcional porque el grupo origen tendrá 3 o menos
-                    integrantes.
-                  </p>
-                )}
+                <p className="text-xs text-ink-soft mt-1">
+                  Es opcional; los grupos no están obligados a tener un
+                  evaluador.
+                </p>
               </div>
             )}
             {grupoDestino && evaluadoresDestino > 1 && (
@@ -1056,13 +1030,6 @@ function TarjetaGrupo({
                 El grupo destino solo puede tener un evaluador.
               </p>
             )}
-            {grupoDestino &&
-              integrantesDestino > 3 &&
-              evaluadoresDestino === 0 && (
-                <p className="text-xs text-red-700">
-                  Los grupos de más de 3 estudiantes deben tener un evaluador.
-                </p>
-              )}
           </div>
           <div className="flex gap-2 mt-3 justify-end">
             <Button size="sm" variant="outline" onClick={onCancelarMover}>

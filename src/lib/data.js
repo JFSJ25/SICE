@@ -158,11 +158,6 @@ function validarMiembrosGrupo(miembros) {
   if (cantidadEvaluadores > 1) {
     throw new Error('Cada grupo puede tener un solo evaluador.')
   }
-  if (miembros.length > 3 && cantidadEvaluadores !== 1) {
-    throw new Error(
-      'Los grupos de más de 3 estudiantes deben tener un evaluador.'
-    )
-  }
 }
 
 export async function obtenerGruposConDetalle(paraleloId, hemisemestreId) {
@@ -399,16 +394,6 @@ export async function moverIntegrante({
       'Selecciona el nuevo líder del grupo de origen antes de mover al líder actual.'
     )
   }
-  if (
-    miembro.rol_grupo === 'evaluador' &&
-    integrantesOrigenDespues > 3 &&
-    !nuevoEvaluadorOrigenId
-  ) {
-    throw new Error(
-      'Los grupos de más de 3 estudiantes deben tener un evaluador.'
-    )
-  }
-
   validarMiembrosGrupo(miembrosOrigen)
   validarMiembrosGrupo(miembrosDestino)
 
@@ -502,7 +487,6 @@ export async function agregarIntegranteGrupo({
     lider: m.lider
   }))
   miembros.push({ rolGrupo, lider: false })
-  validarMiembrosGrupo(miembros)
 
   const { error } = await supabase.from('grupo_miembros').insert({
     grupo_id: grupoId,

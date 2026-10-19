@@ -486,10 +486,6 @@ begin
     if (select count(*) from public.grupo_miembros where grupo_id = grupo.id and lider) <> 1 then
       raise exception 'El grupo % debe tener exactamente un líder', grupo.numero;
     end if;
-    if (select count(*) from public.grupo_miembros where grupo_id = grupo.id) > 3
-       and (select count(*) from public.grupo_miembros where grupo_id = grupo.id and rol_grupo = 'evaluador') <> 1 then
-      raise exception 'El grupo % debe tener un evaluador', grupo.numero;
-    end if;
   end loop;
 
   update public.paralelos set estado_asignacion = 'finalizada'
