@@ -461,32 +461,15 @@ export async function agregarIntegranteGrupo({
   usuarioId,
   rolGrupo = 'expositor'
 }) {
-  const [
-    { data: miembrosActuales, error: errMiembros },
-    { data: grupo, error: errGrupo }
-  ] = await Promise.all([
-    supabase
-      .from('grupo_miembros')
-      .select('usuario_id, rol_grupo, lider')
-      .eq('grupo_id', grupoId),
-    supabase.from('grupos').select('max_integrantes').eq('id', grupoId).single()
-  ])
+  const { data: miembrosActuales, error: errMiembros } = await supabase
+    .from('grupo_miembros')
+    .select('usuario_id, rol_grupo, lider')
+    .eq('grupo_id', grupoId)
   if (errMiembros) throw errMiembros
-  if (errGrupo) throw errGrupo
-
-  if (miembrosActuales.length >= grupo.max_integrantes) {
-    throw new Error('El grupo ya alcanzó el máximo de integrantes.')
-  }
 
   if (miembrosActuales.some(m => m.usuario_id === usuarioId)) {
     throw new Error('El estudiante ya pertenece a este grupo.')
   }
-
-  const miembros = miembrosActuales.map(m => ({
-    rolGrupo: m.rol_grupo,
-    lider: m.lider
-  }))
-  miembros.push({ rolGrupo, lider: false })
 
   const { error } = await supabase.from('grupo_miembros').insert({
     grupo_id: grupoId,

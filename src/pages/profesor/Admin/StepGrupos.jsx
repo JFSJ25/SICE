@@ -657,16 +657,31 @@ function TarjetaGrupo({
               <PersonAddIcon className="w-4 h-4" /> Añadir
             </Button>
           )}
-          {modoEdicion && !catalogoFijo && (
+
+          {modoEdicion && (
             <>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="w-full sm:w-auto"
-                onClick={onEditarTema}
-              >
-                <EditIcon className="w-4 h-4" /> Editar temas
-              </Button>
+              {!catalogoFijo && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="w-full sm:w-auto"
+                    onClick={onEditarTema}
+                  >
+                    <EditIcon className="w-4 h-4" /> Editar temas
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    className="w-full sm:w-auto"
+                    onClick={() => setConfirmandoDeshacer(true)}
+                  >
+                    <DeleteIcon className="w-4 h-4" /> Deshacer
+                  </Button>
+                </>
+              )}
+
               <Button
                 size="sm"
                 variant="ghost"
@@ -674,14 +689,6 @@ function TarjetaGrupo({
                 onClick={onEditarRoles}
               >
                 <EditIcon className="w-4 h-4" /> Editar roles
-              </Button>
-              <Button
-                size="sm"
-                variant="danger"
-                className="w-full sm:w-auto"
-                onClick={() => setConfirmandoDeshacer(true)}
-              >
-                <DeleteIcon className="w-4 h-4" /> Deshacer
               </Button>
             </>
           )}
@@ -1010,9 +1017,7 @@ function TarjetaGrupo({
                     setErrorMovimiento('')
                   }}
                 >
-                  <option value="">
-                    — Ninguno —
-                  </option>
+                  <option value="">— Ninguno —</option>
                   {miembrosOrigenDisponibles.map(m => (
                     <option key={m.usuarioId} value={m.usuarioId}>
                       {m.nombre}

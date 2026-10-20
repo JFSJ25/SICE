@@ -10,7 +10,6 @@ import {
   Eyebrow,
   Panel,
   Aviso,
-  Spinner,
   LoadingSkeleton
 } from '../../components/ui/index.jsx'
 
@@ -71,25 +70,28 @@ export default function Notas() {
           const docSobre100 = califDoc
             ? (califDoc.puntaje / maxDoc) * 100
             : null
+
           const coevSobre100 = coeval ? (coeval.promedio / maxCoev) * 100 : null
 
-          // La rúbrica docente del expositor vale 70 puntos y la
-          // exposición oral se obtiene de la coevaluación estudiantil.
-          // Cada componente se normaliza por su propio máximo antes de
-          // aplicar la ponderación 70/30.
+          // Aplicar la ponderación correspondiente a cada componente
+          const docPonderado =
+            docSobre100 !== null ? docSobre100 * PESO_PROF : null
+
+          const coevPonderado =
+            coevSobre100 !== null ? coevSobre100 * PESO_COEV : null
+
+          // Convertir la suma ponderada a una nota sobre 10
           const final =
-            docSobre100 !== null || coevSobre100 !== null
-              ? ((docSobre100 ?? 0) * PESO_PROF +
-                  (coevSobre100 ?? 0) * PESO_COEV) /
-                10
+            docPonderado !== null || coevPonderado !== null
+              ? ((docPonderado ?? 0) + (coevPonderado ?? 0)) / 10
               : null
 
           return {
             hs,
-            docSobre100,
-            coevSobre100,
+            docPonderado,
+            coevPonderado,
             final,
-            incompleto: docSobre100 === null || coevSobre100 === null,
+            incompleto: docPonderado === null || coevPonderado === null,
             comentario: califDoc?.comentario ?? null
           }
         })
@@ -115,11 +117,18 @@ export default function Notas() {
       </div>
 
       {bloques.map(
-        ({ hs, docSobre100, coevSobre100, final, incompleto, comentario }) => (
+        ({
+          hs,
+          docPonderado,
+          coevPonderado,
+          final,
+          incompleto,
+          comentario
+        }) => (
           <Panel key={hs.id} className="mb-4">
             <h3 className="mb-4">{hs.nombre}</h3>
 
-            {docSobre100 === null && coevSobre100 === null ? (
+            {docPonderado === null && coevPonderado === null ? (
               <p className="text-sm text-ink-soft">
                 Todavía no hay calificaciones registradas para este
                 hemisemestre.
@@ -128,7 +137,8 @@ export default function Notas() {
               <>
                 <FilaDesglose
                   label="Calificación del docente (70 %)"
-                  valor={docSobre100}
+                  valor={docPonderado}
+                  maximo={70}
                 />
 
                 {comentario && (
@@ -142,7 +152,8 @@ export default function Notas() {
 
                 <FilaDesglose
                   label="Promedio de coevaluación (30 %)"
-                  valor={coevSobre100}
+                  valor={coevPonderado}
+                  maximo={30}
                 />
 
                 <div className="mt-3 pt-3 border-black/10 flex justify-between items-baseline">
@@ -161,7 +172,7 @@ export default function Notas() {
 
                 {incompleto && (
                   <p className="text-xs text-sice-amber dark:text-sice-amber-soft mt-2">
-                    Nota provisional — todavía falta que el docente o los
+                    Nota provisional - todavía falta que el docente o los
                     compañeros califiquen.
                   </p>
                 )}
@@ -170,21 +181,16 @@ export default function Notas() {
           </Panel>
         )
       )}
-
-      <p className="text-xs text-ink-soft mt-4">
-        Ponderación: 70 % calificación del docente · 30 % promedio de
-        coevaluación.
-      </p>
     </div>
   )
 }
 
-function FilaDesglose({ label, valor }) {
+function FilaDesglose({ label, valor, maximo }) {
   return (
     <div className="flex justify-between items-baseline py-2.5 border-b border-black/[0.07] gap-3">
       <span className="text-sm text-ink-soft">{label}</span>
       <span className="text-sm font-bold">
-        {valor !== null ? `${valor.toFixed(1)} / 100` : '— pendiente'}
+        {valor !== null ? `${valor.toFixed(1)} / ${maximo}` : '— pendiente'}
       </span>
     </div>
   )

@@ -70,7 +70,8 @@ El profesor finaliza la etapa desde `Grupos y temas`. La base de datos valida
 que existan exactamente siete grupos, que todos tengan integrantes, que todos
 los estudiantes matriculados pertenezcan a un solo grupo y que cada grupo
 tenga exactamente un líder. El rol de evaluador es opcional y no puede
-repetirse dentro del mismo grupo. Una etapa finalizada bloquea los cambios estudiantiles;
+repetirse dentro del mismo grupo. Los grupos pueden tener cualquier cantidad
+de integrantes. Una etapa finalizada bloquea los cambios estudiantiles;
 el profesor puede reabrirla explícitamente. `Redes Eléctricas` permanece
 pendiente y no recibe grupos automáticos en esta versión.
 
