@@ -12,6 +12,8 @@ import {
 } from '../../components/ui/index.jsx'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import RateReviewIcon from '@mui/icons-material/RateReview'
+import LockIcon from '@mui/icons-material/Lock'
+import RefreshIcon from '@mui/icons-material/Refresh'
 
 export default function Coevaluar() {
   const { perfil } = useAuth()
@@ -62,23 +64,45 @@ export default function Coevaluar() {
   if (cargando) return <LoadingSkeleton />
   if (error) return <Aviso variant="red">{error}</Aviso>
 
-  const pendientes = grupos.filter((_, i) => !estados[i])
+  const disponibles = grupos.filter(
+    (g, i) => !estados[i] && g.coevaluacionHabilitada
+  )
+  const noExpuestos = grupos.filter(
+    (g, i) => !estados[i] && !g.coevaluacionHabilitada
+  )
   const hechos = grupos.filter((_, i) => estados[i])
 
   return (
     <div>
-      <div className="mb-7">
-        <Eyebrow>{hemisemestreActivo?.nombre}</Eyebrow>
-        <h1>Coevaluar a otros grupos</h1>
-        <p className="text-sm text-ink-soft mt-1">
-          No puedes coevaluar a tu propio grupo.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4 mb-7">
+        <div>
+          <Eyebrow>{hemisemestreActivo?.nombre}</Eyebrow>
+          <h1>Coevaluar a otros grupos</h1>
+          <p className="text-sm text-ink-soft mt-1">
+            No puedes coevaluar a tu propio grupo. Los grupos se habilitan
+            conforme finalizan su exposición.
+          </p>
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={cargar}
+          disabled={cargando}
+          title="Actualizar lista de grupos habilitados"
+        >
+          <RefreshIcon className="w-4 h-4" /> Actualizar
+        </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 mb-7">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-7">
         <StatCard
-          value={pendientes.length}
-          label="Por coevaluar"
+          value={disponibles.length}
+          label="Listos para coevaluar"
+          acento="gold"
+        />
+        <StatCard
+          value={noExpuestos.length}
+          label="Aún no exponen"
           acento="red"
         />
         <StatCard value={hechos.length} label="Ya coevaluados" acento="green" />
@@ -107,6 +131,17 @@ export default function Coevaluar() {
                   <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-sice-green-soft text-sice-green dark:text-emerald-300">
                     <CheckCircleIcon className="w-4 h-4" /> Ya coevaluado
                   </span>
+                ) : !g.coevaluacionHabilitada ? (
+                  <div className="mt-3 pt-3 border-t border-black/5 dark:border-white/5 flex flex-col gap-1.5">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 text-ink-soft dark:bg-slate-800 dark:text-slate-300 w-fit">
+                      <LockIcon className="w-3.5 h-3.5 text-ink-soft" /> No
+                      disponible
+                    </span>
+                    <p className="text-[11px] text-ink-soft">
+                      El docente habilitará este grupo cuando finalice su
+                      exposición.
+                    </p>
+                  </div>
                 ) : (
                   <Button
                     className="w-full"
@@ -117,7 +152,8 @@ export default function Coevaluar() {
                           tema: g.tema,
                           hemisemestreId: hemisemestreActivo.id,
                           hemisemestreNombre: hemisemestreActivo.nombre,
-                          miembros: g.miembros
+                          miembros: g.miembros,
+                          coevaluacionHabilitada: g.coevaluacionHabilitada
                         }
                       })
                     }

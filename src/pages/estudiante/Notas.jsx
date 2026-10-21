@@ -10,8 +10,10 @@ import {
   Eyebrow,
   Panel,
   Aviso,
+  Button,
   LoadingSkeleton
 } from '../../components/ui/index.jsx'
+import RefreshIcon from '@mui/icons-material/Refresh'
 
 const PESO_PROF = 0.7
 const PESO_COEV = 0.3
@@ -110,10 +112,21 @@ export default function Notas() {
 
   return (
     <div>
-      <div className="mb-7">
-        <Eyebrow>Mis notas</Eyebrow>
-        <h1>{perfil?.nombre_completo}</h1>
-        <p className="text-sm text-ink-soft mt-1">{contexto?.etiqueta}</p>
+      <div className="flex flex-wrap items-start justify-between gap-4 mb-7">
+        <div>
+          <Eyebrow>Mis notas</Eyebrow>
+          <h1>{perfil?.nombre_completo}</h1>
+          <p className="text-sm text-ink-soft mt-1">{contexto?.etiqueta}</p>
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={cargar}
+          disabled={cargando}
+          title="Actualizar notas y promedios"
+        >
+          <RefreshIcon className="w-4 h-4" /> Actualizar
+        </Button>
       </div>
 
       {bloques.map(

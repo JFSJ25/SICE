@@ -122,10 +122,11 @@ create table public.grupos (
 -- Si el profesor no cambia el tema en el 2do hemisemestre, la UI
 -- propone copiar el del 1ro automáticamente.
 create table public.grupo_temas (
-  id              uuid primary key default gen_random_uuid(),
-  grupo_id        uuid not null references public.grupos(id)        on delete cascade,
-  hemisemestre_id uuid not null references public.hemisemestres(id) on delete cascade,
-  tema            text not null,
+  id                      uuid primary key default gen_random_uuid(),
+  grupo_id                uuid not null references public.grupos(id)        on delete cascade,
+  hemisemestre_id         uuid not null references public.hemisemestres(id) on delete cascade,
+  tema                    text not null,
+  coevaluacion_habilitada boolean not null default false,
   unique (grupo_id, hemisemestre_id)
 );
 
@@ -247,7 +248,7 @@ create table public.coevaluaciones (
 
 -- Trigger: impide auto-coevaluación (segunda línea de defensa tras la UI)
 create or replace function public.chk_no_autocoevaluacion()
-returns trigger as $$
+returns trigger as $
 begin
   if exists (
     select 1 from public.grupo_miembros gm
@@ -263,9 +264,17 @@ begin
   ) then
     raise exception 'El estudiante evaluado no pertenece al grupo';
   end if;
+  if not public.es_admin() and not exists (
+    select 1 from public.grupo_temas gt
+    where gt.grupo_id = new.grupo_evaluado_id
+      and gt.hemisemestre_id = new.hemisemestre_id
+      and gt.coevaluacion_habilitada = true
+  ) then
+    raise exception 'La coevaluación para este grupo aún no está habilitada';
+  end if;
   return new;
 end;
-$$ language plpgsql;
+$ language plpgsql;
 
 create trigger trg_no_autocoevaluacion
 before insert or update on public.coevaluaciones
@@ -736,14 +745,14 @@ create policy "grupo_temas_select" on public.grupo_temas
         and public.puede_ver_paralelo(g.paralelo_id)
     )
   );
-create policy "grupo_temas_write" on public.grupo_temas
-  for all using (
+-- Permite actualizar grupo_temas (ej: coevaluacion_habilitada) a quien gestione el paralelo
+create policy "grupo_temas_update" on public.grupo_temas
+  for update using (
     exists (
       select 1
       from public.grupos g
       where g.id = grupo_temas.grupo_id
         and public.puede_gestionar_paralelo(g.paralelo_id)
-        and not public.es_catalogo_fijo(g.paralelo_id)
     )
   )
   with check (
@@ -752,9 +761,68 @@ create policy "grupo_temas_write" on public.grupo_temas
       from public.grupos g
       where g.id = grupo_temas.grupo_id
         and public.puede_gestionar_paralelo(g.paralelo_id)
+    )
+  );
+
+create policy "grupo_temas_insert" on public.grupo_temas
+  for insert with check (
+    exists (
+      select 1
+      from public.grupos g
+      where g.id = grupo_temas.grupo_id
+        and public.puede_gestionar_paralelo(g.paralelo_id)
         and not public.es_catalogo_fijo(g.paralelo_id)
     )
   );
+
+create policy "grupo_temas_delete" on public.grupo_temas
+  for delete using (
+    exists (
+      select 1
+      from public.grupos g
+      where g.id = grupo_temas.grupo_id
+        and public.puede_gestionar_paralelo(g.paralelo_id)
+        and not public.es_catalogo_fijo(g.paralelo_id)
+    )
+  );
+
+create or replace function public.actualizar_coevaluacion_grupos(
+  p_cambios jsonb,
+  p_hemisemestre_id uuid
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $
+declare
+  item jsonb;
+  v_grupo_id uuid;
+  v_habilitada boolean;
+  v_paralelo_id uuid;
+begin
+  for item in select * from jsonb_array_elements(p_cambios) loop
+    v_grupo_id := (item->>'grupo_id')::uuid;
+    v_habilitada := coalesce((item->>'habilitada')::boolean, false);
+
+    select paralelo_id into v_paralelo_id
+      from public.grupos
+     where id = v_grupo_id;
+
+    if v_paralelo_id is null or not public.puede_gestionar_paralelo(v_paralelo_id) then
+      raise exception 'No autorizado para gestionar este grupo';
+    end if;
+
+    update public.grupo_temas
+       set coevaluacion_habilitada = v_habilitada
+     where grupo_id = v_grupo_id
+       and hemisemestre_id = p_hemisemestre_id;
+  end loop;
+end;
+$;
+
+revoke all on function public.actualizar_coevaluacion_grupos(jsonb, uuid) from public;
+grant execute on function public.actualizar_coevaluacion_grupos(jsonb, uuid) to authenticated;
 
 -- configuracion_notas
 -- create policy "config_notas_select" on public.configuracion_notas

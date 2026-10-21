@@ -6,7 +6,7 @@ import {
   obtenerRubrica,
   leerRespuestas
 } from '../../lib/rubricas.js'
-import { guardarCoevaluacion } from '../../lib/data.js'
+import { guardarCoevaluacion, obtenerEstadoCoevaluacionGrupo } from '../../lib/data.js'
 import RubricaForm from '../../components/RubricaForm.jsx'
 import {
   Eyebrow,
@@ -38,6 +38,7 @@ export default function CoevaluarForm() {
   const [selecciones, setSelecciones] = useState({})
   const [cargando, setCargando] = useState(true)
   const [guardando, setGuardando] = useState(false)
+  const [habilitado, setHabilitado] = useState(state?.coevaluacionHabilitada ?? true)
   const [error, setError] = useState('')
   const [exito, setExito] = useState(false)
 
@@ -48,12 +49,19 @@ export default function CoevaluarForm() {
   async function cargar() {
     setCargando(true)
     try {
-      const [rExp, rEval] = await Promise.all([
+      const promesas = [
         obtenerRubrica('COEVAL_EXPOSITOR'),
         obtenerRubrica('COEVAL_EVALUADOR')
-      ])
+      ]
+      if (hemisemestreId && grupoId) {
+        promesas.push(obtenerEstadoCoevaluacionGrupo(grupoId, hemisemestreId))
+      }
+      const [rExp, rEval, estadoHabilitado] = await Promise.all(promesas)
       setRubricaExp(rExp)
       setRubricaEval(rEval)
+      if (estadoHabilitado !== undefined) {
+        setHabilitado(Boolean(estadoHabilitado))
+      }
     } catch (e) {
       setError(e.message)
     } finally {
@@ -62,6 +70,10 @@ export default function CoevaluarForm() {
   }
 
   async function handleEnviar() {
+    if (!habilitado) {
+      setError('La coevaluación para este grupo aún no ha sido habilitada por el docente.')
+      return
+    }
     const evaluaciones = miembros.map(miembro => {
       const rubrica =
         miembro.rolGrupo === 'evaluador' ? rubricaEval : rubricaExp
@@ -119,6 +131,11 @@ export default function CoevaluarForm() {
         <h1 className="leading-tight">{tema}</h1>
       </div>
 
+      {!habilitado && (
+        <Aviso variant="amber">
+          La coevaluación para el Grupo {grupoNumero} aún no ha sido habilitada por el docente porque todavía no finaliza su exposición.
+        </Aviso>
+      )}
       {error && <Aviso variant="red">{error}</Aviso>}
       {exito && <Aviso variant="green">Coevaluación enviada.</Aviso>}
 
@@ -161,7 +178,7 @@ export default function CoevaluarForm() {
             evaluar
           </span>
         </div>
-        <Button onClick={handleEnviar} disabled={guardando || exito}>
+        <Button onClick={handleEnviar} disabled={guardando || exito || !habilitado}>
           {guardando ? (
             <>
               <Spinner className="w-4 h-4" /> Enviando…

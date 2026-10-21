@@ -7,7 +7,8 @@ import {
   obtenerPromedioCoeval,
   obtenerEstadoAsignacion,
   finalizarAsignacion,
-  reabrirAsignacion
+  reabrirAsignacion,
+  guardarEstadosCoevaluacion
 } from '../../lib/data.js'
 import { obtenerRubrica, puntajeMaximo } from '../../lib/rubricas.js'
 import {
@@ -21,6 +22,9 @@ import {
 } from '../../components/ui/index.jsx'
 import EditIcon from '@mui/icons-material/Edit'
 import CloseIcon from '@mui/icons-material/Close'
+import SaveIcon from '@mui/icons-material/Save'
+import UndoIcon from '@mui/icons-material/Undo'
+import RefreshIcon from '@mui/icons-material/Refresh'
 
 export default function Grupos() {
   const { contexto, hemisemestreActivo } = useOutletContext()
@@ -33,6 +37,9 @@ export default function Grupos() {
   const [error, setError] = useState('')
   const [estadoAsignacion, setEstadoAsignacion] = useState('abierta')
   const [guardandoEstado, setGuardandoEstado] = useState(false)
+  const [guardandoCoeval, setGuardandoCoeval] = useState(false)
+  const [estadosGuardados, setEstadosGuardados] = useState(new Map())
+  const [mensajeExito, setMensajeExito] = useState('')
   const usaAsignacionAutonoma = [
     'Sistemas Digitales',
     'Plataformas de Hardware'
@@ -57,6 +64,9 @@ export default function Grupos() {
       // Conserva los grupos visibles aunque falle una consulta secundaria,
       // como calificaciones o promedios.
       setGrupos(gs)
+      setEstadosGuardados(
+        new Map(gs.map(g => [g.id, Boolean(g.coevaluacionHabilitada)]))
+      )
       setEstadoAsignacion(estado)
       const ids = gs.flatMap(g => g.miembros.map(m => m.usuarioId))
       const [mapa, rubricas] = await Promise.all([
@@ -147,6 +157,53 @@ export default function Grupos() {
     }
   }
 
+  function handleToggleCheck(grupoId, habilitada) {
+    setMensajeExito('')
+    setError('')
+    setGrupos(prev =>
+      prev.map(g =>
+        g.id === grupoId ? { ...g, coevaluacionHabilitada: habilitada } : g
+      )
+    )
+  }
+
+  function handleToggleTodas(habilitar) {
+    setMensajeExito('')
+    setError('')
+    setGrupos(prev =>
+      prev.map(g => ({ ...g, coevaluacionHabilitada: habilitar }))
+    )
+  }
+
+  function handleDescartarCambios() {
+    setGrupos(prev =>
+      prev.map(g => ({
+        ...g,
+        coevaluacionHabilitada: Boolean(estadosGuardados.get(g.id))
+      }))
+    )
+    setError('')
+    setMensajeExito('')
+  }
+
+  async function handleGuardarCoeval() {
+    if (!hayCambiosCoeval) return
+    setGuardandoCoeval(true)
+    setError('')
+    setMensajeExito('')
+    try {
+      await guardarEstadosCoevaluacion(grupos, hemisemestreActivo.id)
+      setEstadosGuardados(
+        new Map(grupos.map(g => [g.id, Boolean(g.coevaluacionHabilitada)]))
+      )
+      setMensajeExito('Se guardaron correctamente los cambios de coevaluación.')
+    } catch (e) {
+      setError(`Error al guardar coevaluaciones: ${e.message}`)
+    } finally {
+      setGuardandoCoeval(false)
+    }
+  }
+
   if (cargando) return <LoadingSkeleton />
   if (error && grupos.length === 0) return <Aviso variant="red">{error}</Aviso>
   if (!contexto)
@@ -159,69 +216,158 @@ export default function Grupos() {
   const totalEstudiantes = grupos.flatMap(g => g.miembros).length
   const totalCalificados = mapaCalif.size
   const pendientes = totalEstudiantes - totalCalificados
+  const totalHabilitados = grupos.filter(g => g.coevaluacionHabilitada).length
+  const hayCambiosCoeval = grupos.some(
+    g =>
+      Boolean(estadosGuardados.get(g.id)) !== Boolean(g.coevaluacionHabilitada)
+  )
 
   return (
-    <div>
+    <div className={hayCambiosCoeval ? 'pb-20 md:pb-0' : ''}>
       {/* Encabezado */}
-      <div className="mb-7">
-        <Eyebrow>
-          {hemisemestreActivo?.nombre} · {contexto.etiqueta}
-        </Eyebrow>
-        <h1>Grupos y temas</h1>
-        <p className="text-sm text-ink-soft mt-1">
-          Selecciona un integrante para registrar o editar su calificación.
-        </p>
-        {usaAsignacionAutonoma ? (
-          <div className="flex flex-wrap items-center gap-3 mt-4">
-            <Badge
-              variant={estadoAsignacion === 'finalizada' ? 'ok' : 'pending'}
-            >
-              Asignación{' '}
-              {estadoAsignacion === 'finalizada' ? 'finalizada' : 'abierta'}
-            </Badge>
-            <Button
-              size="sm"
-              variant={
-                estadoAsignacion === 'finalizada' ? 'outline' : 'primary'
-              }
-              onClick={cambiarEstado}
-              disabled={guardandoEstado}
-            >
-              {guardandoEstado
-                ? 'Guardando…'
-                : estadoAsignacion === 'finalizada'
-                  ? 'Reabrir asignación'
-                  : 'Finalizar asignación'}
-            </Button>
-          </div>
-        ) : (
-          <p className="text-xs text-ink-soft mt-4">
-            La asignación autónoma todavía no está disponible para esta materia.
+      <div className="flex flex-wrap items-start justify-between gap-4 mb-7">
+        <div className="flex-1 min-w-[280px]">
+          <Eyebrow>
+            {hemisemestreActivo?.nombre} · {contexto.etiqueta}
+          </Eyebrow>
+          <h1>Grupos y temas</h1>
+          <p className="text-sm text-ink-soft mt-1">
+            Selecciona un integrante para registrar o editar su calificación.
+            Habilita la coevaluación conforme los grupos vayan exponiendo.
           </p>
-        )}
+          {usaAsignacionAutonoma ? (
+            <div className="flex flex-wrap items-center gap-3 mt-4">
+              <Badge
+                variant={estadoAsignacion === 'finalizada' ? 'ok' : 'pending'}
+              >
+                Asignación{' '}
+                {estadoAsignacion === 'finalizada' ? 'finalizada' : 'abierta'}
+              </Badge>
+              <Button
+                size="sm"
+                variant={
+                  estadoAsignacion === 'finalizada' ? 'outline' : 'primary'
+                }
+                onClick={cambiarEstado}
+                disabled={guardandoEstado}
+              >
+                {guardandoEstado
+                  ? 'Guardando…'
+                  : estadoAsignacion === 'finalizada'
+                    ? 'Reabrir asignación'
+                    : 'Finalizar asignación'}
+              </Button>
+            </div>
+          ) : (
+            <p className="text-xs text-ink-soft mt-4">
+              La asignación autónoma todavía no está disponible para esta materia.
+            </p>
+          )}
+        </div>
+
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={cargar}
+          disabled={cargando || guardandoCoeval}
+          title="Actualizar grupos y calificaciones"
+        >
+          <RefreshIcon className="w-4 h-4" /> Actualizar
+        </Button>
       </div>
 
       {error && (
         <Aviso variant="red" dismissible>
           {error}
-          {/* <Button
-            size="sm"
-            variant="outline"
-            className="ml-2"
-            onClick={cargar}
-            disabled={cargando || guardandoEstado}
-          >
-            Reintentar
-          </Button> */}
+        </Aviso>
+      )}
+
+      {mensajeExito && (
+        <Aviso variant="green" dismissible>
+          {mensajeExito}
         </Aviso>
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-7">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <StatCard value={grupos.length} label="Grupos activos" acento="gold" />
         <StatCard value={totalEstudiantes} label="Estudiantes" acento="green" />
         <StatCard value={pendientes} label="Por calificar" acento="red" />
+        <StatCard
+          value={`${totalHabilitados}/${grupos.length}`}
+          label="Coevaluación activa"
+          acento={totalHabilitados > 0 ? 'green' : 'gold'}
+        />
       </div>
+
+      {/* Barra de control y guardado de coevaluación */}
+      {grupos.length > 0 && (
+        <div className="md:sticky md:top-0 md:z-30 flex flex-wrap items-center justify-between gap-3 mb-6 p-3.5 bg-surface rounded-DEFAULT border border-black/10 dark:border-white/10 shadow-sm">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-ink-soft">
+              Habilitación de coevaluación:
+            </span>
+            <Badge variant={totalHabilitados > 0 ? 'ok' : 'pending'}>
+              {totalHabilitados} de {grupos.length} habilitados
+            </Badge>
+            {hayCambiosCoeval && (
+              <span className="inline-flex items-center text-xs font-bold px-2 py-0.5 rounded-full bg-sice-amber-soft text-sice-amber dark:text-amber-200 border border-sice-amber/30">
+                Cambios pendientes
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                handleToggleTodas(totalHabilitados !== grupos.length)
+              }
+              disabled={guardandoCoeval}
+              title={
+                totalHabilitados === grupos.length
+                  ? 'Desmarcar todos los grupos'
+                  : 'Marcar todos los grupos para coevaluar'
+              }
+            >
+              {totalHabilitados === grupos.length
+                ? 'Desmarcar todas'
+                : 'Habilitar todas'}
+            </Button>
+
+            {hayCambiosCoeval && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleDescartarCambios}
+                disabled={guardandoCoeval}
+                title="Descartar cambios no guardados"
+              >
+                <UndoIcon className="w-4 h-4" /> Descartar
+              </Button>
+            )}
+
+            <Button
+              size="sm"
+              variant={hayCambiosCoeval ? 'primary' : 'outline'}
+              onClick={handleGuardarCoeval}
+              disabled={!hayCambiosCoeval || guardandoCoeval}
+              title="Guardar estado de coevaluación en la base de datos"
+            >
+              {guardandoCoeval ? (
+                <>
+                  <Spinner className="w-4 h-4" /> Guardando…
+                </>
+              ) : (
+                <>
+                  <SaveIcon className="w-4 h-4" /> Guardar cambios
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {grupos.length === 0 ? (
         <Aviso>
@@ -242,6 +388,11 @@ export default function Grupos() {
               grupo={g}
               mapaCalif={mapaCalif}
               mapaNotas={mapaNotas}
+              esModificado={
+                Boolean(estadosGuardados.get(g.id)) !==
+                Boolean(g.coevaluacionHabilitada)
+              }
+              onToggleCheck={handleToggleCheck}
               onCalificar={(personaId, nombreEstudiante, rolGrupo) =>
                 navigate(`/profesor/calificar/${personaId}`, {
                   state: {
@@ -260,18 +411,101 @@ export default function Grupos() {
           ))}
         </div>
       )}
+
+      {/* Barra flotante inferior cuando hay cambios sin guardar */}
+      {hayCambiosCoeval &&
+        createPortal(
+          <div className="md:hidden fixed inset-x-0 bottom-1 z-50 flex justify-center px-3 pointer-events-none">
+            <div className="pointer-events-auto bg-slate-900 text-white px-5 py-3 rounded-full shadow-2xl flex items-center gap-4 border border-white/10 animate-fade-in">
+              <span className="text-xs font-medium text-white/90">
+                Cambios sin guardar
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-white hover:bg-white/10 text-xs py-1 px-2.5"
+                  onClick={handleDescartarCambios}
+                  disabled={guardandoCoeval}
+                >
+                  Descartar
+                </Button>
+                <Button
+                  size="sm"
+                  variant="primary"
+                  className="text-xs py-1 px-3"
+                  onClick={handleGuardarCoeval}
+                  disabled={guardandoCoeval}
+                >
+                  {guardandoCoeval ? (
+                    <>
+                      <Spinner className="w-3.5 h-3.5" /> Guardando…
+                    </>
+                  ) : (
+                    <>
+                      <SaveIcon className="w-3.5 h-3.5" /> Guardar cambios
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   )
 }
 
-function CardGrupo({ grupo, mapaCalif, mapaNotas, onCalificar }) {
+function CardGrupo({
+  grupo,
+  mapaCalif,
+  mapaNotas,
+  onCalificar,
+  onToggleCheck,
+  esModificado
+}) {
   const [detalle, setDetalle] = useState(null)
 
   return (
     <div className="bg-white border border-black/[0.11] rounded-DEFAULT shadow-card p-5">
-      <p className="text-[11px] font-bold text-sice-green dark:text-emerald-300 mb-1">
-        Grupo {grupo.numero}
-      </p>
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <p className="text-[11px] font-bold text-sice-green dark:text-emerald-300">
+          Grupo {grupo.numero}
+        </p>
+
+        {/* Check para habilitar coevaluación */}
+        <label
+          className={`inline-flex items-center gap-2 cursor-pointer select-none text-xs font-semibold px-2.5 py-1 rounded-full border transition-all ${
+            grupo.coevaluacionHabilitada
+              ? 'bg-sice-green-soft text-sice-green border-sice-green/30 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-600/30 shadow-sm'
+              : 'bg-surface text-ink-soft border-black/10 dark:border-white/10 hover:border-black/25'
+          }`}
+          title={
+            grupo.coevaluacionHabilitada
+              ? 'Coevaluación habilitada para que los estudiantes evalúen a este grupo'
+              : 'Marcar para permitir que los estudiantes coevalúen a este grupo tras su exposición'
+          }
+        >
+          <input
+            type="checkbox"
+            checked={Boolean(grupo.coevaluacionHabilitada)}
+            onChange={e => onToggleCheck(grupo.id, e.target.checked)}
+            className="accent-sice-green w-3.5 h-3.5 rounded cursor-pointer"
+          />
+          <span>
+            {grupo.coevaluacionHabilitada
+              ? 'Coevaluación habilitada'
+              : 'Habilitar coevaluación'}
+          </span>
+          {esModificado && (
+            <span
+              className="w-2 h-2 rounded-full bg-sice-amber"
+              title="Cambio pendiente de guardar"
+            />
+          )}
+        </label>
+      </div>
+
       <h2 className="text-base mb-4 leading-snug">{grupo.tema}</h2>
 
       <ul className="flex flex-col gap-2">

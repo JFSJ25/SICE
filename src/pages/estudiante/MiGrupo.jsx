@@ -15,6 +15,7 @@ import {
   Spinner,
   LoadingSkeleton
 } from '../../components/ui/index.jsx'
+import RefreshIcon from '@mui/icons-material/Refresh'
 
 export default function MiGrupo() {
   const { perfil } = useAuth()
@@ -118,16 +119,27 @@ export default function MiGrupo() {
 
   return (
     <div>
-      <div className="mb-7">
-        <Eyebrow>
-          {hemisemestreActivo?.nombre} · {contexto.etiqueta}
-        </Eyebrow>
-        <h1>Asignación de grupos</h1>
-        <p className="text-sm text-ink-soft mt-1">
-          {abierta
-            ? 'Escoge un grupo, tu rol y si serás su líder. Puedes cambiar tu elección mientras la etapa esté abierta.'
-            : 'La etapa de asignación fue finalizada por el profesor.'}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4 mb-7">
+        <div>
+          <Eyebrow>
+            {hemisemestreActivo?.nombre} · {contexto.etiqueta}
+          </Eyebrow>
+          <h1>Asignación de grupos</h1>
+          <p className="text-sm text-ink-soft mt-1">
+            {abierta
+              ? 'Escoge un grupo, tu rol y si serás su líder. Puedes cambiar tu elección mientras la etapa esté abierta.'
+              : 'La etapa de asignación fue finalizada por el profesor.'}
+          </p>
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={cargar}
+          disabled={cargando}
+          title="Actualizar lista de grupos habilitados"
+        >
+          <RefreshIcon className="w-4 h-4" /> Actualizar
+        </Button>
       </div>
 
       {error && <Aviso variant="red">{error}</Aviso>}

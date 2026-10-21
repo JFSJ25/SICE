@@ -166,7 +166,7 @@ export async function obtenerGruposConDetalle(paraleloId, hemisemestreId) {
     .select(
       `
       id, numero, max_integrantes,
-      grupo_temas!inner ( tema, hemisemestre_id ),
+      grupo_temas!inner ( id, tema, hemisemestre_id, coevaluacion_habilitada ),
       grupo_miembros ( usuario_id, rol_grupo, lider )
     `
     )
@@ -195,7 +195,9 @@ export async function obtenerGruposConDetalle(paraleloId, hemisemestreId) {
     id: g.id,
     numero: g.numero,
     maxIntegrantes: g.max_integrantes,
+    grupoTemaId: g.grupo_temas[0]?.id,
     tema: g.grupo_temas[0]?.tema ?? '(sin tema)',
+    coevaluacionHabilitada: Boolean(g.grupo_temas[0]?.coevaluacion_habilitada),
     miembros: (g.grupo_miembros ?? []).map(m => {
       const usuario = mapUsuarios.get(m.usuario_id)
       return {
@@ -315,6 +317,155 @@ export async function eliminarGrupo(grupoId) {
 }
 
 // Actualiza el tema de un grupo en UN hemisemestre específico.
+// Actualiza el estado de coevaluación de un grupo en un hemisemestre específico.
+// Guarda el estado de coevaluación de múltiples grupos a la vez.
+export async function guardarEstadosCoevaluacion(grupos, hemisemestreId) {
+  if (!grupos || grupos.length === 0) return
+
+  const payload = grupos.map(g => ({
+    grupo_id: g.id,
+    habilitada: Boolean(g.coevaluacionHabilitada)
+  }))
+
+  // 1. Intentar primero con la función RPC Security Definer (garantiza bypass de RLS de catálogo fijo)
+  const { error: rpcError } = await supabase.rpc(
+    'actualizar_coevaluacion_grupos',
+    {
+      p_cambios: payload,
+      p_hemisemestre_id: hemisemestreId
+    }
+  )
+
+  if (!rpcError) return
+
+  // 2. Fallback a update directo con verificación explícita de filas modificadas
+  const promesas = grupos.map(async g => {
+    let query = supabase
+      .from('grupo_temas')
+      .update({ coevaluacion_habilitada: Boolean(g.coevaluacionHabilitada) })
+
+    if (g.grupoTemaId) {
+      query = query.eq('id', g.grupoTemaId)
+    } else {
+      query = query
+        .eq('grupo_id', g.id)
+        .eq('hemisemestre_id', hemisemestreId)
+    }
+
+    const { data, error } = await query.select()
+    if (error) throw error
+    if (!data || data.length === 0) {
+      throw new Error(
+        `No se pudo actualizar el Grupo ${g.numero}. Asegúrate de haber ejecutado el script SQL de migración en Supabase.`
+      )
+    }
+  })
+
+  await Promise.all(promesas)
+}
+
+// Actualiza el estado de coevaluación de un grupo en un hemisemestre específico.
+export async function actualizarEstadoCoevaluacionGrupo(
+  grupoId,
+  hemisemestreId,
+  habilitada,
+  grupoTemaId
+) {
+  const { error: rpcError } = await supabase.rpc(
+    'actualizar_coevaluacion_grupos',
+    {
+      p_cambios: [{ grupo_id: grupoId, habilitada: Boolean(habilitada) }],
+      p_hemisemestre_id: hemisemestreId
+    }
+  )
+
+  if (!rpcError) return
+
+  let query = supabase
+    .from('grupo_temas')
+    .update({ coevaluacion_habilitada: Boolean(habilitada) })
+
+  if (grupoTemaId) {
+    query = query.eq('id', grupoTemaId)
+  } else {
+    query = query
+      .eq('grupo_id', grupoId)
+      .eq('hemisemestre_id', hemisemestreId)
+  }
+
+  const { data, error } = await query.select()
+  if (error) throw error
+  if (!data || data.length === 0) {
+    throw new Error(
+      'No se pudo actualizar el grupo en la base de datos. Asegúrate de haber ejecutado el script SQL de migración en Supabase.'
+    )
+  }
+}
+
+// Actualiza el estado de coevaluación para un conjunto de grupos.
+export async function actualizarEstadoCoevaluacionTodos(
+  grupos,
+  hemisemestreId,
+  habilitada
+) {
+  if (!grupos || grupos.length === 0) return
+
+  const payload = grupos.map(item => ({
+    grupo_id: typeof item === 'object' ? item.id : item,
+    habilitada: Boolean(habilitada)
+  }))
+
+  const { error: rpcError } = await supabase.rpc(
+    'actualizar_coevaluacion_grupos',
+    {
+      p_cambios: payload,
+      p_hemisemestre_id: hemisemestreId
+    }
+  )
+
+  if (!rpcError) return
+
+  const promesas = grupos.map(async item => {
+    const temaId = typeof item === 'object' ? item.grupoTemaId : null
+    const gId = typeof item === 'object' ? item.id : item
+
+    let query = supabase
+      .from('grupo_temas')
+      .update({ coevaluacion_habilitada: Boolean(habilitada) })
+
+    if (temaId) {
+      query = query.eq('id', temaId)
+    } else {
+      query = query
+        .eq('grupo_id', gId)
+        .eq('hemisemestre_id', hemisemestreId)
+    }
+
+    const { data, error } = await query.select()
+    if (error) throw error
+    if (!data || data.length === 0) {
+      throw new Error(
+        'No se pudieron actualizar los grupos en la base de datos. Asegúrate de haber ejecutado el script SQL de migración en Supabase.'
+      )
+    }
+  })
+
+  await Promise.all(promesas)
+}
+
+// Consulta si la coevaluación para un grupo está habilitada en un hemisemestre.
+export async function obtenerEstadoCoevaluacionGrupo(grupoId, hemisemestreId) {
+  const { data, error } = await supabase
+    .from('grupo_temas')
+    .select('coevaluacion_habilitada')
+    .eq('grupo_id', grupoId)
+    .eq('hemisemestre_id', hemisemestreId)
+    .maybeSingle()
+
+  if (error) throw error
+  return Boolean(data?.coevaluacion_habilitada)
+}
+
 export async function actualizarTemaGrupo(grupoId, hemisemestreId, tema) {
   const { error } = await supabase
     .from('grupo_temas')
