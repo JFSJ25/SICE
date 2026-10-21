@@ -79,15 +79,7 @@ Al insertar un paralelo, los triggers del esquema crean sus dos hemisemestres y 
 
 ### Habilitación y control de coevaluaciones
 
-Para garantizar que los estudiantes evalúen a sus compañeros únicamente después de haber presenciado su exposición:
-
-- Cada grupo en cada hemisemestre cuenta con una bandera de habilitación de coevaluación (`coevaluacion_habilitada` en `grupo_temas`).
-- En la vista del docente (**Grupos y temas**), cada tarjeta de grupo incluye un checkbox individual para habilitar o deshabilitar su coevaluación.
-- La barra de herramientas permite **Habilitar todas** o **Desmarcar todas** rápidamente.
-- Cualquier cambio realizado en los checks se confirma mediante el botón **Guardar cambios**, evitando cambios accidentales o escrituras no confirmadas.
-- En la vista del estudiante (**Coevaluar**), los grupos que aún no han sido habilitados aparecen identificados como *No disponible* con el botón bloqueado.
-- La base de datos incluye un trigger que rechaza inserciones de coevaluaciones hacia grupos cuya exposición no haya sido habilitada.
-- Las vistas interactivas clave (**Mi grupo**, **Coevaluar**, **Mis notas** en el rol estudiante, y **Grupos y temas** en el rol docente) cuentan con botones de **Actualizar** que permiten refrescar los datos bajo demanda en plena sesión de clase sin necesidad de recargar toda la página.
+Para garantizar que los estudiantes evalúen a sus compañeros únicamente después de haber presenciado su exposición. Cada grupo en cada hemisemestre cuenta con una bandera de habilitación de coevaluación (`coevaluacion_habilitada` en `grupo_temas`).
 
 ### Edge Function
 
