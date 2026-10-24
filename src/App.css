@@ -5,13 +5,15 @@
 @tailwind utilities;
 
 .react-loading-skeleton {
-  --base-color: #e7edf5;
-  --highlight-color: #f8fafd;
+  --base-color: #e2e8f0;
+  --highlight-color: #f8fafc;
+  --border-radius: 6px;
 }
 
 .dark .react-loading-skeleton {
-  --base-color: #263b59;
-  --highlight-color: #385274;
+  --base-color: #20314a;
+  --highlight-color: #334b6e;
+  --border-radius: 6px;
 }
 
 @layer base {

@@ -16,6 +16,7 @@ import {
   LoadingSkeleton
 } from '../../components/ui/index.jsx'
 import RefreshIcon from '@mui/icons-material/Refresh'
+import { useRealtimeRefresh } from '../../lib/realtime.js'
 
 export default function MiGrupo() {
   const { perfil } = useAuth()
@@ -27,6 +28,21 @@ export default function MiGrupo() {
   const [exito, setExito] = useState('')
   const [borradores, setBorradores] = useState({})
 
+  const realtimeSubscriptions = useMemo(
+    () => [
+      { event: '*', schema: 'public', table: 'grupo_miembros' },
+      { event: '*', schema: 'public', table: 'grupos' },
+      { event: '*', schema: 'public', table: 'grupo_temas' },
+      {
+        event: '*',
+        schema: 'public',
+        table: 'paralelos',
+        filter: `id=eq.${contexto?.paraleloId}`
+      }
+    ],
+    [contexto?.paraleloId]
+  )
+
   useEffect(() => {
     if (!contexto || !hemisemestreActivo) {
       setCargando(false)
@@ -35,8 +51,14 @@ export default function MiGrupo() {
     cargar()
   }, [contexto?.paraleloId, hemisemestreActivo?.id])
 
-  async function cargar() {
-    setCargando(true)
+  useRealtimeRefresh({
+    subscriptions: realtimeSubscriptions,
+    enabled: Boolean(contexto?.paraleloId && hemisemestreActivo?.id),
+    onChange: ({ silent } = {}) => cargar(silent)
+  })
+
+  async function cargar(silenciosa = false) {
+    if (!silenciosa) setCargando(true)
     setError('')
     try {
       const nuevosGrupos = await obtenerGruposConDetalle(
@@ -88,7 +110,7 @@ export default function MiGrupo() {
         rolGrupo: borrador.rol,
         lider: borrador.lider
       })
-      await cargar()
+      await cargar(true)
       setExito('Tu asignación se guardó correctamente.')
     } catch (e) {
       setError(e.message)
@@ -107,7 +129,7 @@ export default function MiGrupo() {
     }))
   }
 
-  if (cargando) return <LoadingSkeleton />
+  if (cargando) return <LoadingSkeleton variant="mi-grupo" />
   if (error && grupos.length === 0) return <Aviso variant="red">{error}</Aviso>
   if (!contexto)
     return (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 import {
@@ -14,6 +14,7 @@ import {
   Button,
   LoadingSkeleton
 } from '../../components/ui/index.jsx'
+import { useRealtimeRefresh } from '../../lib/realtime.js'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import AssignmentIcon from '@mui/icons-material/Assignment'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
@@ -31,6 +32,24 @@ export default function Notas() {
   const [error, setError] = useState('')
   const [rubricasExpandidas, setRubricasExpandidas] = useState({})
 
+  const realtimeSubscriptions = useMemo(
+    () => [
+      {
+        event: '*',
+        schema: 'public',
+        table: 'calificaciones_docente',
+        filter: `estudiante_id=eq.${perfil?.id}`
+      },
+      {
+        event: '*',
+        schema: 'public',
+        table: 'coevaluaciones',
+        filter: `estudiante_evaluado_id=eq.${perfil?.id}`
+      }
+    ],
+    [perfil?.id]
+  )
+
   function toggleRubrica(hsId) {
     setRubricasExpandidas(prev => ({
       ...prev,
@@ -46,8 +65,14 @@ export default function Notas() {
     cargar()
   }, [contexto?.paraleloId, hemisemestres.length])
 
-  async function cargar() {
-    setCargando(true)
+  useRealtimeRefresh({
+    subscriptions: realtimeSubscriptions,
+    enabled: Boolean(perfil?.id && contexto?.paraleloId),
+    onChange: ({ silent } = {}) => cargar(silent)
+  })
+
+  async function cargar(silenciosa = false) {
+    if (!silenciosa) setCargando(true)
     setError('')
     try {
       const tipoDoc =
@@ -121,7 +146,7 @@ export default function Notas() {
     }
   }
 
-  if (cargando) return <LoadingSkeleton />
+  if (cargando) return <LoadingSkeleton variant="notas" />
   if (error) return <Aviso variant="red">{error}</Aviso>
 
   return (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useOutletContext, useNavigate } from 'react-router-dom'
 import {
   obtenerGruposConDetalle,
@@ -13,6 +13,7 @@ import {
   FilaTabla,
   CeldaTabla
 } from '../../components/ui/index.jsx'
+import { useRealtimeRefresh } from '../../lib/realtime.js'
 
 export default function Pendientes() {
   const { contexto, hemisemestreActivo } = useOutletContext()
@@ -22,6 +23,15 @@ export default function Pendientes() {
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
 
+  const realtimeSubscriptions = useMemo(
+    () => [
+      { event: '*', schema: 'public', table: 'grupo_miembros' },
+      { event: '*', schema: 'public', table: 'calificaciones_docente' },
+      { event: '*', schema: 'public', table: 'coevaluaciones' }
+    ],
+    []
+  )
+
   useEffect(() => {
     if (!contexto || !hemisemestreActivo) {
       setCargando(false)
@@ -30,8 +40,14 @@ export default function Pendientes() {
     cargar()
   }, [contexto?.paraleloId, hemisemestreActivo?.id])
 
-  async function cargar() {
-    setCargando(true)
+  useRealtimeRefresh({
+    subscriptions: realtimeSubscriptions,
+    enabled: Boolean(contexto?.paraleloId && hemisemestreActivo?.id),
+    onChange: ({ silent } = {}) => cargar(silent)
+  })
+
+  async function cargar(silenciosa = false) {
+    if (!silenciosa) setCargando(true)
     setError('')
     try {
       const grupos = await obtenerGruposConDetalle(
@@ -47,7 +63,7 @@ export default function Pendientes() {
     }
   }
 
-  if (cargando) return <LoadingSkeleton />
+  if (cargando) return <LoadingSkeleton variant="pendientes" />
   if (error) return <Aviso variant="red">{error}</Aviso>
 
   return (

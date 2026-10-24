@@ -9,6 +9,7 @@ import {
   Campo,
   Eyebrow,
   Input,
+  // LoadingSkeleton,
   Panel,
   Spinner
 } from '../../components/ui/index.jsx'
@@ -66,6 +67,10 @@ export default function Estudiantes() {
     await navigator.clipboard.writeText(resultado.password_temporal)
     setCopiado(true)
   }
+
+  // if (cargando && estudiantes.length === 0 && !busqueda) {
+  //   return <LoadingSkeleton variant="estudiantes" />
+  // }
 
   return (
     <div>

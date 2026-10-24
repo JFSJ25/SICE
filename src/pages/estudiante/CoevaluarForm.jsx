@@ -111,7 +111,7 @@ export default function CoevaluarForm() {
     }
   }
 
-  if (cargando) return <LoadingSkeleton />
+  if (cargando) return <LoadingSkeleton variant="coevaluar-form" />
 
   return (
     <div>

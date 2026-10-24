@@ -136,7 +136,7 @@ export default function Reportes() {
     }
   }
 
-  if (cargando) return <LoadingSkeleton />
+  if (cargando) return <LoadingSkeleton variant="reportes" />
 
   return (
     <div>

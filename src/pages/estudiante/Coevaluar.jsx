@@ -61,7 +61,7 @@ export default function Coevaluar() {
     }
   }
 
-  if (cargando) return <LoadingSkeleton />
+  if (cargando) return <LoadingSkeleton variant="coevaluar" />
   if (error) return <Aviso variant="red">{error}</Aviso>
 
   const disponibles = grupos.filter(

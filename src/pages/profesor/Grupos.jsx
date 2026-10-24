@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useOutletContext, useNavigate } from 'react-router-dom'
 import {
@@ -25,6 +25,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import SaveIcon from '@mui/icons-material/Save'
 import UndoIcon from '@mui/icons-material/Undo'
 import RefreshIcon from '@mui/icons-material/Refresh'
+import { useRealtimeRefresh } from '../../lib/realtime.js'
 
 export default function Grupos() {
   const { contexto, hemisemestreActivo } = useOutletContext()
@@ -45,6 +46,22 @@ export default function Grupos() {
     'Plataformas de Hardware'
   ].includes(contexto?.materiaNombre)
 
+  const realtimeSubscriptions = useMemo(
+    () => [
+      { event: '*', schema: 'public', table: 'grupo_miembros' },
+      { event: '*', schema: 'public', table: 'grupo_temas' },
+      { event: '*', schema: 'public', table: 'calificaciones_docente' },
+      { event: '*', schema: 'public', table: 'coevaluaciones' },
+      {
+        event: '*',
+        schema: 'public',
+        table: 'paralelos',
+        filter: `id=eq.${contexto?.paraleloId}`
+      }
+    ],
+    [contexto?.paraleloId]
+  )
+
   useEffect(() => {
     if (!contexto || !hemisemestreActivo) {
       setCargando(false)
@@ -53,8 +70,14 @@ export default function Grupos() {
     cargar()
   }, [contexto?.paraleloId, hemisemestreActivo?.id])
 
-  async function cargar() {
-    setCargando(true)
+  useRealtimeRefresh({
+    subscriptions: realtimeSubscriptions,
+    enabled: Boolean(contexto?.paraleloId && hemisemestreActivo?.id),
+    onChange: ({ silent } = {}) => cargar(silent)
+  })
+
+  async function cargar(silenciosa = false) {
+    if (!silenciosa) setCargando(true)
     setError('')
     try {
       const [gs, estado] = await Promise.all([
@@ -204,7 +227,7 @@ export default function Grupos() {
     }
   }
 
-  if (cargando) return <LoadingSkeleton />
+  if (cargando) return <LoadingSkeleton variant="grupos" />
   if (error && grupos.length === 0) return <Aviso variant="red">{error}</Aviso>
   if (!contexto)
     return (

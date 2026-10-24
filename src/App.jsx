@@ -30,8 +30,8 @@ function RequiereAuth({ children }) {
   if (cargando)
     return (
       <div className="min-h-screen flex items-center justify-center px-5 py-8">
-        <div className="w-full max-w-2xl">
-          <LoadingSkeleton />
+        <div className="w-full max-w-md">
+          <LoadingSkeleton variant="auth" />
         </div>
       </div>
     )
@@ -44,8 +44,8 @@ function RequiereProfesor({ children }) {
   if (cargando)
     return (
       <div className="min-h-screen flex items-center justify-center px-5 py-8">
-        <div className="w-full max-w-2xl">
-          <LoadingSkeleton />
+        <div className="w-full max-w-md">
+          <LoadingSkeleton variant="auth" />
         </div>
       </div>
     )
@@ -59,8 +59,8 @@ function RequiereEstudiante({ children }) {
   if (cargando)
     return (
       <div className="min-h-screen flex items-center justify-center px-5 py-8">
-        <div className="w-full max-w-2xl">
-          <LoadingSkeleton />
+        <div className="w-full max-w-md">
+          <LoadingSkeleton variant="auth" />
         </div>
       </div>
     )
@@ -75,8 +75,8 @@ function RootRedirect() {
   if (cargando)
     return (
       <div className="min-h-screen flex items-center justify-center px-5 py-8">
-        <div className="w-full max-w-2xl">
-          <LoadingSkeleton />
+        <div className="w-full max-w-md">
+          <LoadingSkeleton variant="auth" />
         </div>
       </div>
     )

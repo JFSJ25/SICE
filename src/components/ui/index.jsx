@@ -3,12 +3,12 @@
 // ============================================================
 
 import { useState } from 'react'
-import Skeleton from 'react-loading-skeleton'
-import 'react-loading-skeleton/dist/skeleton.css'
 import DarkModeIcon from '@mui/icons-material/DarkMode'
 import LightModeIcon from '@mui/icons-material/LightMode'
 import CloseIcon from '@mui/icons-material/Close'
 import { useTheme } from '../../context/ThemeContext.jsx'
+
+export * from './skeletons.jsx'
 
 export function Button({
   children,
@@ -134,25 +134,6 @@ export function Spinner({ className = '' }) {
     <div
       className={`inline-block w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin ${className}`}
     />
-  )
-}
-
-export function LoadingSkeleton() {
-  return (
-    <div className="w-full space-y-5" aria-label="Cargando contenido">
-      <div className="space-y-2">
-        <Skeleton width="7rem" height="0.75rem" />
-        <Skeleton width="min(18rem, 75%)" height="2rem" />
-        <Skeleton width="min(28rem, 90%)" height="0.9rem" />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Skeleton height="7rem" borderRadius="10px" />
-        <Skeleton height="7rem" borderRadius="10px" />
-      </div>
-      <div className="rounded-DEFAULT border border-black/[0.08] dark:border-white/10 p-4">
-        <Skeleton count={4} height="1rem" className="mb-3" />
-      </div>
-    </div>
   )
 }
 

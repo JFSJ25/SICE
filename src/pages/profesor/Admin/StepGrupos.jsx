@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   obtenerEstudiantesSinGrupo,
   obtenerGruposBase,
@@ -28,6 +28,7 @@ import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
 import PersonAddIcon from '@mui/icons-material/PersonAdd'
 import DeleteIcon from '@mui/icons-material/Delete'
 import SaveIcon from '@mui/icons-material/Save'
+import { useRealtimeRefresh } from '../../../lib/realtime.js'
 
 export default function StepGrupos({
   paraleloId,
@@ -52,6 +53,15 @@ export default function StepGrupos({
     'Sistemas Digitales',
     'Plataformas de Hardware'
   ].includes(paraleloActual?.materiaNombre)
+  const realtimeSubscriptions = useMemo(
+    () => [
+      { event: '*', schema: 'public', table: 'matriculas' },
+      { event: '*', schema: 'public', table: 'grupo_miembros' },
+      { event: '*', schema: 'public', table: 'grupos' },
+      { event: '*', schema: 'public', table: 'grupo_temas' }
+    ],
+    []
+  )
 
   useEffect(() => {
     cargar()
@@ -66,6 +76,12 @@ export default function StepGrupos({
     }
   }, [modoEdicion])
 
+  useRealtimeRefresh({
+    subscriptions: realtimeSubscriptions,
+    enabled: Boolean(paraleloId && !modoEdicion),
+    onChange: ({ silent } = {}) => cargar(silent)
+  })
+
   async function seleccionarParalelo(id) {
     try {
       const nuevosHemisemestres = await obtenerHemisemestres(id)
@@ -78,8 +94,8 @@ export default function StepGrupos({
     }
   }
 
-  async function cargar() {
-    setCargando(true)
+  async function cargar(silenciosa = false) {
+    if (!silenciosa) setCargando(true)
     setError('')
     try {
       const [sg, gs] = await Promise.all([
@@ -95,7 +111,7 @@ export default function StepGrupos({
     }
   }
 
-  if (cargando) return <LoadingSkeleton />
+  if (cargando) return <LoadingSkeleton variant="admin-grupos" />
 
   return (
     <div className="flex flex-col gap-4">
