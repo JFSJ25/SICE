@@ -901,3 +901,46 @@ create policy "config_notas_select" on public.configuracion_notas
   for select using (public.puede_ver_paralelo(paralelo_id));
 create policy "config_notas_write" on public.configuracion_notas
   for all using (public.es_staff()) with check (public.es_staff());
+
+-- ============================================================
+-- 8. REALTIME
+-- ============================================================
+
+-- Tablas cuyos cambios alimentan las vistas colaborativas de SICE.
+-- Este bloque es idempotente y mantiene el esquema base alineado con
+-- supabase/migrations/202610232140_habilitar_realtime_sice.sql.
+do $$
+declare
+  tabla text;
+begin
+  foreach tabla in array array[
+    'calificaciones_docente',
+    'coevaluaciones',
+    'matriculas',
+    'grupo_miembros',
+    'grupos',
+    'grupo_temas',
+    'paralelos'
+  ] loop
+    if exists (
+      select 1
+        from pg_publication
+       where pubname = 'supabase_realtime'
+    ) and not exists (
+      select 1
+        from pg_publication p
+        join pg_publication_rel pr on pr.prpubid = p.oid
+        join pg_class c on c.oid = pr.prrelid
+        join pg_namespace n on n.oid = c.relnamespace
+       where p.pubname = 'supabase_realtime'
+         and n.nspname = 'public'
+         and c.relname = tabla
+    ) then
+      execute format(
+        'alter publication supabase_realtime add table public.%I',
+        tabla
+      );
+    end if;
+  end loop;
+end
+$$;
