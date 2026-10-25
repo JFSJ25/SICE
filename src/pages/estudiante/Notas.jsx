@@ -157,7 +157,7 @@ export default function Notas() {
           <h1>{perfil?.nombre_completo}</h1>
           <p className="text-sm text-ink-soft mt-1">{contexto?.etiqueta}</p>
         </div>
-        <Button
+        {/* <Button
           size="sm"
           variant="outline"
           onClick={cargar}
@@ -165,7 +165,7 @@ export default function Notas() {
           title="Actualizar notas y promedios"
         >
           <RefreshIcon className="w-4 h-4" /> Actualizar
-        </Button>
+        </Button> */}
       </div>
 
       {bloques.map(

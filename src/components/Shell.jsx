@@ -197,7 +197,7 @@ export default function Shell() {
         <aside
           className={`
             fixed top-10 bottom-0 left-0 z-[70] w-64 bg-sidebar border-r border-white/30
-            flex flex-col py-5 px-3.5 overflow-y-auto
+            flex flex-col py-5 px-3.5 overflow-y-auto overscroll-contain
             transition-transform duration-300 ease-out shadow-2xl
             ${navAbierta ? 'translate-x-0' : '-translate-x-full'}
             md:top-0 md:translate-x-0

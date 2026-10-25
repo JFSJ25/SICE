@@ -153,7 +153,7 @@ export default function MiGrupo() {
               : 'La etapa de asignación fue finalizada por el profesor.'}
           </p>
         </div>
-        <Button
+        {/* <Button
           size="sm"
           variant="outline"
           onClick={cargar}
@@ -161,11 +161,15 @@ export default function MiGrupo() {
           title="Actualizar lista de grupos habilitados"
         >
           <RefreshIcon className="w-4 h-4" /> Actualizar
-        </Button>
+        </Button> */}
       </div>
 
       {error && <Aviso variant="red">{error}</Aviso>}
-      {exito && <Aviso variant="green">{exito}</Aviso>}
+      {exito && (
+        <Aviso variant="green" dismissible>
+          {exito}
+        </Aviso>
+      )}
 
       {miGrupo && (
         <Panel>

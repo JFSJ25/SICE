@@ -16,13 +16,17 @@ export function useRealtimeRefresh({
     if (!enabled || subscriptions.length === 0) return undefined
 
     let timer = null
+    let pendingPayloads = []
     let cleanup = () => {}
 
-    const scheduleRefresh = () => {
+    const scheduleRefresh = payload => {
+      pendingPayloads.push(payload)
       if (timer) clearTimeout(timer)
       timer = setTimeout(() => {
         timer = null
-        onChangeRef.current({ silent: true })
+        const payloads = pendingPayloads
+        pendingPayloads = []
+        onChangeRef.current({ silent: true, payloads })
       }, debounceMs)
     }
 
@@ -50,6 +54,7 @@ export function useRealtimeRefresh({
       return () => {
         if (timer) clearTimeout(timer)
         timer = null
+        pendingPayloads = []
         client.removeChannel(channel)
       }
     }

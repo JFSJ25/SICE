@@ -61,7 +61,7 @@ export function StatCardsGridSkeleton({
 export function GruposSkeleton() {
   return (
     <div className="w-full space-y-6" aria-label="Cargando grupos y temas">
-      <PageHeaderSkeleton hasButton hasEyebrow />
+      <PageHeaderSkeleton hasButton={false} hasEyebrow />
       <StatCardsGridSkeleton
         count={4}
         columnsClass="grid-cols-2 md:grid-cols-4"
@@ -268,7 +268,7 @@ export function MiGrupoSkeleton() {
       className="w-full space-y-6"
       aria-label="Cargando información del grupo"
     >
-      <PageHeaderSkeleton hasButton hasEyebrow />
+      <PageHeaderSkeleton hasButton={false} hasEyebrow />
 
       {/* Banner asignación actual */}
       <div className="bg-white dark:bg-slate-800 border border-blue-900/[0.09] dark:border-white/10 rounded-DEFAULT shadow-card p-5">
@@ -404,7 +404,7 @@ export function CoevaluarFormSkeleton() {
 export function NotasSkeleton() {
   return (
     <div className="w-full space-y-6" aria-label="Cargando notas y promedios">
-      <PageHeaderSkeleton hasButton hasEyebrow />
+      <PageHeaderSkeleton hasButton={false} hasEyebrow />
 
       {[1, 2].map(s => (
         <div
@@ -573,7 +573,7 @@ export function AuthSkeleton() {
 export function GeneralPageSkeleton() {
   return (
     <div className="w-full space-y-6" aria-label="Cargando contenido">
-      <PageHeaderSkeleton hasButton hasEyebrow />
+      <PageHeaderSkeleton hasButton={false} hasEyebrow />
       <StatCardsGridSkeleton
         count={4}
         columnsClass="grid-cols-2 md:grid-cols-4"

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   obtenerEstudiantesSinGrupo,
   obtenerGruposBase,
@@ -28,6 +28,7 @@ import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
 import PersonAddIcon from '@mui/icons-material/PersonAdd'
 import DeleteIcon from '@mui/icons-material/Delete'
 import SaveIcon from '@mui/icons-material/Save'
+import RefreshIcon from '@mui/icons-material/Refresh'
 import { useRealtimeRefresh } from '../../../lib/realtime.js'
 
 export default function StepGrupos({
@@ -46,6 +47,9 @@ export default function StepGrupos({
   const [modoMover, setModoMover] = useState(null) // { usuarioId, grupoOrigenId }
   const [modoAgregar, setModoAgregar] = useState(null)
   const [modoEdicion, setModoEdicion] = useState(false)
+  const [actualizando, setActualizando] = useState(false)
+  const cargarVersionRef = useRef(0)
+  const operacionEnProgresoRef = useRef(false)
   const paraleloActual = paralelos.find(
     p => (p.id ?? p.paraleloId) === paraleloId
   )
@@ -53,14 +57,33 @@ export default function StepGrupos({
     'Sistemas Digitales',
     'Plataformas de Hardware'
   ].includes(paraleloActual?.materiaNombre)
+
+  const siguienteNumero = useMemo(() => {
+    if (grupos.length === 0) return 1
+    const nums = grupos
+      .map(g => Number(g.numero))
+      .filter(n => Number.isInteger(n) && n > 0)
+    return nums.length > 0 ? Math.max(...nums) + 1 : 1
+  }, [grupos])
+
   const realtimeSubscriptions = useMemo(
     () => [
-      { event: '*', schema: 'public', table: 'matriculas' },
+      {
+        event: '*',
+        schema: 'public',
+        table: 'matriculas',
+        filter: paraleloId ? `paralelo_id=eq.${paraleloId}` : undefined
+      },
+      {
+        event: '*',
+        schema: 'public',
+        table: 'grupos',
+        filter: paraleloId ? `paralelo_id=eq.${paraleloId}` : undefined
+      },
       { event: '*', schema: 'public', table: 'grupo_miembros' },
-      { event: '*', schema: 'public', table: 'grupos' },
       { event: '*', schema: 'public', table: 'grupo_temas' }
     ],
-    []
+    [paraleloId]
   )
 
   useEffect(() => {
@@ -79,7 +102,11 @@ export default function StepGrupos({
   useRealtimeRefresh({
     subscriptions: realtimeSubscriptions,
     enabled: Boolean(paraleloId && !modoEdicion),
-    onChange: ({ silent } = {}) => cargar(silent)
+    debounceMs: 500,
+    onChange: ({ silent } = {}) => {
+      if (operacionEnProgresoRef.current) return
+      cargar(silent)
+    }
   })
 
   async function seleccionarParalelo(id) {
@@ -95,6 +122,7 @@ export default function StepGrupos({
   }
 
   async function cargar(silenciosa = false) {
+    const version = ++cargarVersionRef.current
     if (!silenciosa) setCargando(true)
     setError('')
     try {
@@ -102,12 +130,46 @@ export default function StepGrupos({
         obtenerEstudiantesSinGrupo(paraleloId),
         obtenerGruposBase(paraleloId)
       ])
-      setSinGrupo(sg)
-      setGrupos(gs)
+      if (version !== cargarVersionRef.current) return
+
+      // Deduplicar grupos defensivamente por id y ordenar por número
+      const mapaGrupos = new Map()
+      for (const g of gs) {
+        if (!mapaGrupos.has(g.id)) {
+          mapaGrupos.set(g.id, g)
+        }
+      }
+      const gruposFinales = [...mapaGrupos.values()].sort(
+        (a, b) => a.numero - b.numero
+      )
+
+      // Garantizar consistencia: ningún estudiante asignado a un grupo debe aparecer en sinGrupo
+      const idsConGrupo = new Set(
+        gruposFinales.flatMap(g => (g.miembros ?? []).map(m => m.usuarioId))
+      )
+      const sinGrupoFinal = sg.filter(
+        est => !idsConGrupo.has(est.usuarioId)
+      )
+
+      setSinGrupo(sinGrupoFinal)
+      setGrupos(gruposFinales)
     } catch (e) {
-      setError(e.message)
+      if (version === cargarVersionRef.current) {
+        setError(e.message)
+      }
     } finally {
-      setCargando(false)
+      if (version === cargarVersionRef.current) {
+        setCargando(false)
+      }
+    }
+  }
+
+  async function handleActualizarManual() {
+    setActualizando(true)
+    try {
+      await cargar(true)
+    } finally {
+      setActualizando(false)
     }
   }
 
@@ -116,11 +178,28 @@ export default function StepGrupos({
   return (
     <div className="flex flex-col gap-4">
       <Panel>
-        <SelectorParalelo
-          paralelos={paralelos}
-          value={paraleloId}
-          onChange={seleccionarParalelo}
-        />
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div className="flex-1">
+            <SelectorParalelo
+              paralelos={paralelos}
+              value={paraleloId}
+              onChange={seleccionarParalelo}
+            />
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleActualizarManual}
+            disabled={cargando || actualizando}
+            title="Actualizar grupos y estudiantes sin grupo"
+            className="self-start sm:self-end shrink-0"
+          >
+            <RefreshIcon
+              className={`w-4 h-4 ${actualizando ? 'animate-spin' : ''}`}
+            />{' '}
+            Actualizar
+          </Button>
+        </div>
       </Panel>
 
       {error && <Aviso variant="red">{error}</Aviso>}
@@ -129,10 +208,16 @@ export default function StepGrupos({
       {!catalogoFijo && sinGrupo.length > 0 && (
         <BuilderNuevoGrupo
           sinGrupo={sinGrupo}
-          siguienteNumero={grupos.length + 1}
+          siguienteNumero={siguienteNumero}
           paraleloId={paraleloId}
           hemisemestres={hemisemestres}
-          onCreado={cargar}
+          onOperacionInicio={() => {
+            operacionEnProgresoRef.current = true
+          }}
+          onOperacionFin={() => {
+            operacionEnProgresoRef.current = false
+          }}
+          onCreado={() => cargar(true)}
           onError={setError}
         />
       )}
@@ -197,14 +282,18 @@ export default function StepGrupos({
                 onIniciarAgregar={() => setModoAgregar(g.id)}
                 onCerrarAgregar={() => setModoAgregar(null)}
                 onDeshacer={async () => {
+                  operacionEnProgresoRef.current = true
                   try {
                     await eliminarGrupo(g.id)
-                    await cargar()
+                    await cargar(true)
                   } catch (e) {
                     setError(e.message)
+                  } finally {
+                    operacionEnProgresoRef.current = false
                   }
                 }}
                 onAgregar={async (usuarioId, rolGrupo) => {
+                  operacionEnProgresoRef.current = true
                   try {
                     await agregarIntegranteGrupo({
                       grupoId: g.id,
@@ -212,9 +301,11 @@ export default function StepGrupos({
                       rolGrupo
                     })
                     setModoAgregar(null)
-                    await cargar()
+                    await cargar(true)
                   } catch (e) {
                     setError(e.message)
+                  } finally {
+                    operacionEnProgresoRef.current = false
                   }
                 }}
                 onIniciarMover={usuarioId =>
@@ -227,6 +318,7 @@ export default function StepGrupos({
                   nuevoLiderOrigenId,
                   nuevoEvaluadorOrigenId
                 ) => {
+                  operacionEnProgresoRef.current = true
                   try {
                     await moverIntegrante({
                       usuarioId: modoMover.usuarioId,
@@ -237,12 +329,14 @@ export default function StepGrupos({
                       nuevoEvaluadorOrigenId
                     })
                     setModoMover(null)
-                    await cargar()
+                    await cargar(true)
                   } catch (e) {
                     setError(e.message)
+                  } finally {
+                    operacionEnProgresoRef.current = false
                   }
                 }}
-                onTemaGuardado={cargar}
+                onTemaGuardado={() => cargar(true)}
                 onError={setError}
               />
             ))}
@@ -267,6 +361,8 @@ function BuilderNuevoGrupo({
   siguienteNumero,
   paraleloId,
   hemisemestres,
+  onOperacionInicio,
+  onOperacionFin,
   onCreado,
   onError
 }) {
@@ -275,6 +371,25 @@ function BuilderNuevoGrupo({
   const [guardando, setGuardando] = useState(false)
   const [liderActual, setLiderActual] = useState(null)
   const [desplegado, setDesplegado] = useState(true)
+
+  useEffect(() => {
+    setSeleccionados(prev => {
+      const uidsDisponibles = new Set(sinGrupo.map(est => est.usuarioId))
+      let modificado = false
+      const nuevo = new Map()
+      for (const [uid, m] of prev.entries()) {
+        if (uidsDisponibles.has(uid)) {
+          nuevo.set(uid, m)
+        } else {
+          modificado = true
+        }
+      }
+      if (liderActual && !uidsDisponibles.has(liderActual)) {
+        setLiderActual(null)
+      }
+      return modificado ? nuevo : prev
+    })
+  }, [sinGrupo, liderActual])
 
   function toggleEstudiante(uid, nombre) {
     setSeleccionados(prev => {
@@ -323,6 +438,7 @@ function BuilderNuevoGrupo({
       })
     )
     setGuardando(true)
+    onOperacionInicio?.()
     try {
       await crearGrupo({
         paraleloId,
@@ -337,11 +453,12 @@ function BuilderNuevoGrupo({
       setSeleccionados(new Map())
       setTemas({})
       setLiderActual(null)
-      onCreado()
+      await onCreado?.()
     } catch (e) {
       onError(e.message)
     } finally {
       setGuardando(false)
+      onOperacionFin?.()
     }
   }
 

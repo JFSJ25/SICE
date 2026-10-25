@@ -191,14 +191,19 @@ export async function obtenerGruposConDetalle(paraleloId, hemisemestreId) {
 
   const mapUsuarios = new Map((usuarios ?? []).map(u => [u.id, u]))
 
-  return (data ?? []).map(g => ({
+  const gruposUnicos = new Map((data ?? []).map(g => [g.id, g]))
+  return [...gruposUnicos.values()].map(g => ({
     id: g.id,
     numero: g.numero,
     maxIntegrantes: g.max_integrantes,
     grupoTemaId: g.grupo_temas[0]?.id,
     tema: g.grupo_temas[0]?.tema ?? '(sin tema)',
     coevaluacionHabilitada: Boolean(g.grupo_temas[0]?.coevaluacion_habilitada),
-    miembros: (g.grupo_miembros ?? []).map(m => {
+    miembros: [
+      ...new Map(
+        (g.grupo_miembros ?? []).map(m => [m.usuario_id, m])
+      ).values()
+    ].map(m => {
       const usuario = mapUsuarios.get(m.usuario_id)
       return {
         usuarioId: m.usuario_id,
@@ -212,8 +217,8 @@ export async function obtenerGruposConDetalle(paraleloId, hemisemestreId) {
 
 // Para el builder del Admin: grupos sin tener en cuenta el hemisemestre
 // (membresía es fija; el tema es lo que varía).
-export async function obtenerGruposBase(paraleloId) {
-  const { data, error } = await supabase
+export async function obtenerGruposBase(paraleloId, grupoId = null) {
+  let query = supabase
     .from('grupos')
     .select(
       `
@@ -223,6 +228,10 @@ export async function obtenerGruposBase(paraleloId) {
     )
     .eq('paralelo_id', paraleloId)
     .order('numero')
+
+  if (grupoId) query = query.eq('id', grupoId)
+
+  const { data, error } = await query
   if (error) throw error
 
   const userIds = [
@@ -241,11 +250,16 @@ export async function obtenerGruposBase(paraleloId) {
 
   const mapUsuarios = new Map((usuarios ?? []).map(u => [u.id, u]))
 
-  return (data ?? []).map(g => ({
+  const gruposUnicos = new Map((data ?? []).map(g => [g.id, g]))
+  return [...gruposUnicos.values()].map(g => ({
     id: g.id,
     numero: g.numero,
     maxIntegrantes: g.max_integrantes,
-    miembros: (g.grupo_miembros ?? []).map(m => {
+    miembros: [
+      ...new Map(
+        (g.grupo_miembros ?? []).map(m => [m.usuario_id, m])
+      ).values()
+    ].map(m => {
       const usuario = mapUsuarios.get(m.usuario_id)
       return {
         usuarioId: m.usuario_id,
@@ -256,6 +270,11 @@ export async function obtenerGruposBase(paraleloId) {
       }
     })
   }))
+}
+
+export async function obtenerGrupoBase(paraleloId, grupoId) {
+  const grupos = await obtenerGruposBase(paraleloId, grupoId)
+  return grupos[0] ?? null
 }
 
 // Crea un grupo con sus miembros y un tema independiente por hemisemestre.
@@ -648,7 +667,10 @@ export async function obtenerEstudiantesSinGrupo(paraleloId) {
   if (errG) throw errG
 
   const idsConGrupo = new Set(conGrupo.map(r => r.usuario_id))
-  return matriculados
+  const matriculadosUnicos = new Map(
+    matriculados.map(m => [m.usuario_id, m])
+  )
+  return [...matriculadosUnicos.values()]
     .filter(m => !idsConGrupo.has(m.usuario_id))
     .map(m => ({
       usuarioId: m.usuario_id,

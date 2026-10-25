@@ -288,7 +288,7 @@ export default function Grupos() {
           )}
         </div>
 
-        <Button
+        {/* <Button
           size="sm"
           variant="outline"
           onClick={cargar}
@@ -296,7 +296,7 @@ export default function Grupos() {
           title="Actualizar grupos y calificaciones"
         >
           <RefreshIcon className="w-4 h-4" /> Actualizar
-        </Button>
+        </Button> */}
       </div>
 
       {error && (

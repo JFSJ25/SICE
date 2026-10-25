@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useOutletContext, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { obtenerGruposConDetalle, yaCoevaluoGrupo } from '../../lib/data.js'
@@ -7,7 +7,6 @@ import {
   StatCard,
   Aviso,
   Button,
-  Spinner,
   LoadingSkeleton
 } from '../../components/ui/index.jsx'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
@@ -24,6 +23,8 @@ export default function Coevaluar() {
   const [estados, setEstados] = useState([]) // bool[] paralelo a grupos
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
+  const [actualizando, setActualizando] = useState(false)
+  const cargarVersionRef = useRef(0)
 
   useEffect(() => {
     if (!contexto || !hemisemestreActivo) {
@@ -33,8 +34,9 @@ export default function Coevaluar() {
     cargar()
   }, [contexto?.paraleloId, hemisemestreActivo?.id])
 
-  async function cargar() {
-    setCargando(true)
+  async function cargar(silenciosa = false) {
+    const version = ++cargarVersionRef.current
+    if (!silenciosa) setCargando(true)
     setError('')
     try {
       const todos = await obtenerGruposConDetalle(
@@ -52,17 +54,27 @@ export default function Coevaluar() {
           )
         )
       )
+      if (version !== cargarVersionRef.current) return
       setGrupos(otros)
       setEstados(checks)
     } catch (e) {
-      setError(e.message)
+      if (version === cargarVersionRef.current) setError(e.message)
     } finally {
-      setCargando(false)
+      if (version === cargarVersionRef.current) setCargando(false)
+    }
+  }
+
+  async function handleActualizarManual() {
+    setActualizando(true)
+    try {
+      await cargar(true)
+    } finally {
+      setActualizando(false)
     }
   }
 
   if (cargando) return <LoadingSkeleton variant="coevaluar" />
-  if (error) return <Aviso variant="red">{error}</Aviso>
+  // if (error) return <Aviso variant="red">{error}</Aviso>
 
   const disponibles = grupos.filter(
     (g, i) => !estados[i] && g.coevaluacionHabilitada
@@ -86,13 +98,22 @@ export default function Coevaluar() {
         <Button
           size="sm"
           variant="outline"
-          onClick={cargar}
-          disabled={cargando}
+          onClick={handleActualizarManual}
+          disabled={cargando || actualizando}
           title="Actualizar lista de grupos habilitados"
         >
-          <RefreshIcon className="w-4 h-4" /> Actualizar
+          <RefreshIcon
+            className={`w-4 h-4 ${actualizando ? 'animate-spin' : ''}`}
+          />{' '}
+          Actualizar
         </Button>
       </div>
+
+      {error && (
+        <Aviso variant="red" className="mb-4">
+          {error}
+        </Aviso>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-7">
         <StatCard
