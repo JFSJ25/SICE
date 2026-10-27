@@ -3,6 +3,7 @@ import CodeIcon from '@mui/icons-material/Code'
 import GroupsIcon from '@mui/icons-material/Groups'
 import GavelIcon from '@mui/icons-material/Gavel'
 import { Eyebrow, Panel } from '../components/ui/index.jsx'
+import packageJson from '../../package.json'
 
 const equipo = [
   {
@@ -41,7 +42,7 @@ export default function AcercaDe() {
         <Eyebrow>Información del sistema</Eyebrow>
         <h1>Acerca de SICE</h1>
         <p className="text-sm text-ink-soft mt-1">
-          Sistema de Calificación de Exposiciones · Versión 1.0.0
+          Sistema de Calificación de Exposiciones · Versión {packageJson.version}
         </p>
       </div>
 
@@ -111,7 +112,7 @@ export default function AcercaDe() {
       </div>
 
       <footer className="text-center text-xs text-ink-soft py-3">
-        SICE · Versión 1.0.0 · © 2026
+        SICE · Versión {packageJson.version} · © 2026
       </footer>
     </div>
   )

@@ -4,6 +4,23 @@ import { obtenerPerfil } from '../lib/auth.js'
 
 const AuthContext = createContext(null)
 
+function esTokenExpirado(error) {
+  const mensaje = String(error?.message ?? '').toLowerCase()
+  return (
+    error?.code === 'PGRST301' ||
+    /jwt.*expired|token.*expired|expired.*jwt/.test(mensaje)
+  )
+}
+
+async function cerrarSesionLocal(mensaje) {
+  try {
+    const { error } = await supabase.auth.signOut({ scope: 'local' })
+    if (error) console.error(mensaje, error)
+  } catch (error) {
+    console.error(mensaje, error)
+  }
+}
+
 export function AuthProvider({ children }) {
   const [sesion, setSesion] = useState(undefined) // undefined = cargando
   const [perfil, setPerfil] = useState(null)
@@ -13,16 +30,38 @@ export function AuthProvider({ children }) {
 
   // 1) Sesión inicial: solo una vez
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSesion(data.session)
-      if (data.session) {
-        uidRef.current = data.session.user.id
-        setPerfilCargando(true)
-        cargarPerfil(data.session.user.id)
-      } else {
+    let activo = true
+    supabase.auth
+      .getSession()
+      .then(({ data, error }) => {
+        if (error) throw error
+        if (!activo) return
+
+        setSesion(data.session)
+        if (data.session) {
+          uidRef.current = data.session.user.id
+          setPerfilCargando(true)
+          cargarPerfil(data.session.user.id)
+        } else {
+          setPerfil(null)
+          uidRef.current = null
+          setPerfilCargando(false)
+        }
+      })
+      .catch(async error => {
+        console.error('Error al recuperar la sesión', error)
+        if (!activo) return
+
+        uidRef.current = null
+        setSesion(null)
+        setPerfil(null)
         setPerfilCargando(false)
-      }
-    })
+        await cerrarSesionLocal('Error al limpiar la sesión inválida')
+      })
+
+    return () => {
+      activo = false
+    }
   }, [])
 
   // 2) Si el watchdog recrea el cliente, guardarlo para re-suscribirse
@@ -76,6 +115,11 @@ export function AuthProvider({ children }) {
     } catch (error) {
       console.error('Error al obtener el perfil de usuario', error)
       setPerfil(null)
+      if (esTokenExpirado(error)) {
+        uidRef.current = null
+        setSesion(null)
+        await cerrarSesionLocal('Error al cerrar la sesión expirada')
+      }
     } finally {
       setPerfilCargando(false)
     }
