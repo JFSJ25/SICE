@@ -13,6 +13,9 @@
 -- en el SQL Editor de Supabase Studio.
 -- ============================================================
 
+create unique index if not exists rubricas_tipo_version_unique
+  on public.rubricas (tipo, version);
+
 do $$
 declare
   r_id uuid;
@@ -37,9 +40,10 @@ begin
   insert into public.rubrica_criterios (categoria_id, nombre, observacion, orden) values (
     c_id,
     'Cumple con formato estándar',
-    'No olvidar contextualizar los campos de carátula respecto al tema de exposición. '
-    'Incluir capturas de pantalla completas de las fuentes bibliográficas. '
-    'Los criterios personales no deben ser escuetos ni desarrollados exclusivamente con IA.',
+    'No olvidar contextualizar campos de carátula del informe respecto a su tema de exposición. '
+    'Coloque capturas de pantallas de todo el contenido de sus fuentes bibliográficas que vaya a presentar en sus exposiciones '
+    '(Las imágenes deben mostrar el entorno completo de la consulta). Los criterios personales no deben ser escuetos, '
+    'ni desarrollados exclusivamente con IA.',
     1
   ) returning id into k_id;
   insert into public.rubrica_opciones (criterio_id, etiqueta, puntos, orden) values
@@ -73,8 +77,10 @@ begin
   insert into public.rubrica_criterios (categoria_id, nombre, observacion, orden) values (
     c_id,
     'Formato estándar',
-    'Utilizar la plantilla del profesor. Máximo 5 diapositivas por participante o 10 minutos de exposición. '
-    'En ejercicios, mostrar todos los pasos con transiciones y verificar con simulador de ser necesario.',
+    'Utilizar la plantilla proporcionada por el profesor. Máximo 5 diapositivas por participante o 10 minutos de exposición. '
+    'Utilice organizadores gráficos o imágenes en lugar de textos extensos. Para la presentacíón de un ejercicio, '
+    'el enunciado debe ser coherente y específico, así como también se deberán presentar todos los pasos realizados, '
+    'utilizando transiciones en las diapositivas y verificando su respuesta haciendo uso de un simulador de ser necesario.',
     1
   ) returning id into k_id;
   insert into public.rubrica_opciones (criterio_id, etiqueta, puntos, orden) values
@@ -87,7 +93,7 @@ begin
   insert into public.rubrica_criterios (categoria_id, nombre, observacion, orden) values (
     c_id,
     'Contiene información pertinente al tema',
-    'Revisar contenidos correspondientes a cada tema según el sílabo.',
+    'Contenido presentado en las diapositivas debe constar en el marco teórico.',
     2
   ) returning id into k_id;
   insert into public.rubrica_opciones (criterio_id, etiqueta, puntos, orden) values
@@ -122,8 +128,10 @@ begin
   insert into public.rubrica_criterios (categoria_id, nombre, observacion, orden) values (
     c_id,
     'Cumple con formato estándar',
-    'No olvidar contextualizar los campos de carátula respecto al tema de exposición. '
-    'Incluir capturas de pantalla completas de las fuentes bibliográficas.',
+    'No olvidar contextualizar campos de carátula del informe respecto a su tema de exposición. '
+    'Coloque capturas de pantallas de todo el contenido de sus fuentes bibliográficas que vaya a presentar en sus exposiciones '
+    '(Las imágenes deben mostrar el entorno completo de la consulta). Los criterios personales no deben ser escuetos, '
+    'ni desarrollados exclusivamente con IA.',
     1
   ) returning id into k_id;
   insert into public.rubrica_opciones (criterio_id, etiqueta, puntos, orden) values
@@ -135,7 +143,8 @@ begin
   insert into public.rubrica_criterios (categoria_id, nombre, observacion, orden) values (
     c_id,
     'Referencias bibliográficas',
-    'Las preguntas deben extraerse o constar explícitamente en el marco teórico presentado. Usar norma IEEE.',
+    'Las preguntas realizadas deben ser extraídas o constar explícitamente en el marco teórico presentado. '
+    'Debe utilizar norma IEEE para referenciar.',
     2
   ) returning id into k_id;
   insert into public.rubrica_opciones (criterio_id, etiqueta, puntos, orden) values
@@ -151,9 +160,10 @@ begin
   insert into public.rubrica_criterios (categoria_id, nombre, observacion, orden) values (
     c_id,
     'Referencia las preguntas',
-    'El cuestionario debe indicarse en el ítem 1.2 (Solución o resultados) del informe. '
-    'Si no está explícita en el marco teórico, indicar "Elaboración propia" (o con IA, si aplica). '
-    'Todas las preguntas deben tener 4 opciones.',
+    'El cuestionario debe estar indicado en el ítem 1.2 SOLUCIÓN O RESULTADOS del Informe presentado. '
+    'En el caso de que la pregunta no esté explícita en el Marco Teórico, sino que fue extraída del mismo mediante un proceso analítico propio, '
+    'deberá indicar como referencia la descripción "Elaboración propia". Todas las preguntas deben tener 4 opciones de respuesta. '
+    'En caso de utilizar IA, referenciar indicando "Elaboración propia con uso de IA (ChatGPT, Gemini, DeepSeek, ...)"',
     1
   ) returning id into k_id;
   insert into public.rubrica_opciones (criterio_id, etiqueta, puntos, orden) values
@@ -163,7 +173,12 @@ begin
     (k_id, 'Nunca',           0, 4);
 
   insert into public.rubrica_criterios (categoria_id, nombre, observacion, orden) values (
-    c_id, 'Tienen coherencia las preguntas', null, 2
+    c_id, 'Tienen coherencia las preguntas',
+    'El cuestionario debe estar indicado en el ítem 1.2 SOLUCIÓN O RESULTADOS del Informe presentado. '
+    'En el caso de que la pregunta no esté explícita en el Marco Teórico, sino que fue extraída del mismo mediante un proceso analítico propio, '
+    'deberá indicar como referencia la descripción "Elaboración propia". Todas las preguntas deben tener 4 opciones de respuesta. '
+    'En caso de utilizar IA, referenciar indicando "Elaboración propia con uso de IA (ChatGPT, Gemini, DeepSeek, ...)"',
+    2
   ) returning id into k_id;
   insert into public.rubrica_opciones (criterio_id, etiqueta, puntos, orden) values
     (k_id, 'Siempre',        20, 1),
@@ -185,7 +200,10 @@ begin
     values (r_id, 'Exposición oral', 1) returning id into c_id;
 
   insert into public.rubrica_criterios (categoria_id, nombre, observacion, orden) values (
-    c_id, 'Realiza lecturas extensas de información', null, 1
+    c_id, 'Realiza lecturas extensas de información',
+    'En las diapositivas se sugiere utilizar organizadores gráficos o imágenes que permitan transmitir el contenido de una manera más amena, '
+    'y que evite realizar lecturas extensas de texto en las diapositivas.',
+    1
   ) returning id into k_id;
   insert into public.rubrica_opciones (criterio_id, etiqueta, puntos, orden) values
     (k_id, 'No',      25, 1),
@@ -193,7 +211,10 @@ begin
     (k_id, 'Siempre',  5, 3);
 
   insert into public.rubrica_criterios (categoria_id, nombre, observacion, orden) values (
-    c_id, 'Transmite claramente la información', null, 2
+    c_id, 'Transmite claramente la información',
+    'Para manejar adecuadamente el nerviosismo propio de una presentación ante un público, es muy importante tener seguridad de lo que se habla, '
+    'por lo cual es indispensable realizar una buena investigación y preparación del tema.',
+    2
   ) returning id into k_id;
   insert into public.rubrica_opciones (criterio_id, etiqueta, puntos, orden) values
     (k_id, 'Siempre',  25, 1),
@@ -210,7 +231,10 @@ begin
     values (r_id, 'Aplicación del cuestionario', 1) returning id into c_id;
 
   insert into public.rubrica_criterios (categoria_id, nombre, observacion, orden) values (
-    c_id, 'Herramienta informática utilizada', null, 1
+    c_id, 'Herramienta informática utilizada',
+    'Ejemplos de herramientas apropiadas: Quizz, Formularios de Google. La aplicación del cuestionario requiere el visto bueno del profesor, '
+    'previo la revisión del informe presentado por el estudiante a cargo, con la finalidad de evitar que el cuestionario no sea aplicado.',
+    1
   ) returning id into k_id;
   insert into public.rubrica_opciones (criterio_id, etiqueta, puntos, orden) values
     (k_id, 'Apropiada',                     15, 1),
@@ -218,7 +242,11 @@ begin
     (k_id, 'No se aplica el cuestionario',   5, 3);
 
   insert into public.rubrica_criterios (categoria_id, nombre, observacion, orden) values (
-    c_id, 'Cantidad de preguntas elaboradas', null, 2
+    c_id, 'Cantidad de preguntas elaboradas',
+    'Se sugiere un mínimo de 5 y un máximo de 10 preguntas. Se debe balancear las preguntas teóricas y de resolución de ejercicios, '
+    'para un máximo de 15 minutos que podrá tomar la aplicación del cuestionario. Siempre deberán existir al menos dos (2) preguntas '
+    'sobre resolución de ejercicios o aplicación práctica de los contenidos expuestos.',
+    2
   ) returning id into k_id;
   insert into public.rubrica_opciones (criterio_id, etiqueta, puntos, orden) values
     (k_id, 'Adecuada',                       15, 1),
