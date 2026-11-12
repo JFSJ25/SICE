@@ -14,6 +14,7 @@ import PendingActionsIcon from '@mui/icons-material/PendingActions'
 import PersonIcon from '@mui/icons-material/Person'
 import FactCheckIcon from '@mui/icons-material/FactCheck'
 import GradeIcon from '@mui/icons-material/Grade'
+import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn'
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts'
 import AssessmentIcon from '@mui/icons-material/Assessment'
@@ -145,6 +146,11 @@ export default function Shell() {
   ]
   const navEstudiante = [
     { to: '/estudiante/mi-grupo', label: 'Mi grupo', Icon: PersonIcon },
+    {
+      to: '/estudiante/autoevaluar',
+      label: 'Autoevaluación',
+      Icon: AssignmentTurnedInIcon
+    },
     { to: '/estudiante/coevaluar', label: 'Coevaluar', Icon: FactCheckIcon },
     { to: '/estudiante/notas', label: 'Mis notas', Icon: GradeIcon }
   ]

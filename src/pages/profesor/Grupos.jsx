@@ -8,7 +8,10 @@ import {
   obtenerEstadoAsignacion,
   finalizarAsignacion,
   reabrirAsignacion,
-  guardarEstadosCoevaluacion
+  guardarEstadosCoevaluacion,
+  obtenerEstadoAutoevaluacion,
+  configurarAutoevaluacion,
+  obtenerMapaAutoevaluaciones
 } from '../../lib/data.js'
 import { obtenerRubrica, puntajeMaximo } from '../../lib/rubricas.js'
 import {
@@ -24,7 +27,7 @@ import EditIcon from '@mui/icons-material/Edit'
 import CloseIcon from '@mui/icons-material/Close'
 import SaveIcon from '@mui/icons-material/Save'
 import UndoIcon from '@mui/icons-material/Undo'
-import RefreshIcon from '@mui/icons-material/Refresh'
+// import RefreshIcon from '@mui/icons-material/Refresh'
 import { useRealtimeRefresh } from '../../lib/realtime.js'
 
 export default function Grupos() {
@@ -41,6 +44,9 @@ export default function Grupos() {
   const [guardandoCoeval, setGuardandoCoeval] = useState(false)
   const [estadosGuardados, setEstadosGuardados] = useState(new Map())
   const [mensajeExito, setMensajeExito] = useState('')
+  const [autoevaluacionHabilitada, setAutoevaluacionHabilitada] =
+    useState(false)
+  const [guardandoAutoevaluacion, setGuardandoAutoevaluacion] = useState(false)
   const usaAsignacionAutonoma = [
     'Sistemas Digitales',
     'Plataformas de Hardware'
@@ -52,6 +58,12 @@ export default function Grupos() {
       { event: '*', schema: 'public', table: 'grupo_temas' },
       { event: '*', schema: 'public', table: 'calificaciones_docente' },
       { event: '*', schema: 'public', table: 'coevaluaciones' },
+      {
+        event: '*',
+        schema: 'public',
+        table: 'configuracion_autoevaluacion',
+        filter: `paralelo_id=eq.${contexto?.paraleloId}`
+      },
       {
         event: '*',
         schema: 'public',
@@ -80,9 +92,10 @@ export default function Grupos() {
     if (!silenciosa) setCargando(true)
     setError('')
     try {
-      const [gs, estado] = await Promise.all([
+      const [gs, estado, estadoAuto] = await Promise.all([
         obtenerGruposConDetalle(contexto.paraleloId, hemisemestreActivo.id),
-        obtenerEstadoAsignacion(contexto.paraleloId)
+        obtenerEstadoAsignacion(contexto.paraleloId),
+        obtenerEstadoAutoevaluacion(contexto.paraleloId, hemisemestreActivo.id)
       ])
       // Conserva los grupos visibles aunque falle una consulta secundaria,
       // como calificaciones o promedios.
@@ -91,6 +104,7 @@ export default function Grupos() {
         new Map(gs.map(g => [g.id, Boolean(g.coevaluacionHabilitada)]))
       )
       setEstadoAsignacion(estado)
+      setAutoevaluacionHabilitada(estadoAuto)
       const ids = gs.flatMap(g => g.miembros.map(m => m.usuarioId))
       const [mapa, rubricas] = await Promise.all([
         obtenerMapaCalificacionesDocente(ids, hemisemestreActivo.id),
@@ -107,6 +121,16 @@ export default function Grupos() {
       const maxDocEval = puntajeMaximo(rubricaEval)
       const maxCoevExp = puntajeMaximo(rubricaCoevExp)
       const maxCoevEval = puntajeMaximo(rubricaCoevEval)
+      const mapaAutoevaluaciones = await obtenerMapaAutoevaluaciones(
+        ids,
+        hemisemestreActivo.id,
+        [
+          rubricaExp.id,
+          rubricaEval.id,
+          rubricaCoevExp.id,
+          rubricaCoevEval.id
+        ]
+      )
       const promediosPorEstudiante = new Map(
         await Promise.all(
           gs.flatMap(g =>
@@ -137,6 +161,23 @@ export default function Grupos() {
           const maxDoc = esEvaluador ? maxDocEval : maxDocExp
           const maxCoev = esEvaluador ? maxCoevEval : maxCoevExp
           const promedio = promediosPorEstudiante.get(m.usuarioId)
+          const autoevaluaciones = mapaAutoevaluaciones.get(m.usuarioId) ?? []
+          const rubricaAutoDocente = esEvaluador ? rubricaEval : rubricaExp
+          const rubricaAutoCoev = esEvaluador
+            ? rubricaCoevEval
+            : rubricaCoevExp
+          const autoDocente = autoevaluaciones.find(
+            a => a.rubrica_id === rubricaAutoDocente.id
+          )
+          const autoCoev = autoevaluaciones.find(
+            a => a.rubrica_id === rubricaAutoCoev.id
+          )
+          const autoevaluacion =
+            autoDocente && autoCoev
+              ? (Number(autoDocente.puntaje) / puntajeMaximo(rubricaAutoDocente)) *
+                  70 +
+                (Number(autoCoev.puntaje) / puntajeMaximo(rubricaAutoCoev)) * 30
+              : null
           const docente = calif ? (calif.puntaje / maxDoc) * 100 : null
           const coevaluacion = promedio
             ? (promedio.promedio / maxCoev) * 100
@@ -149,7 +190,8 @@ export default function Grupos() {
             final:
               docente !== null && coevaluacion !== null
                 ? docente * 0.7 + coevaluacion * 0.3
-                : null
+                : null,
+            autoevaluacion
           })
         })
       })
@@ -227,6 +269,30 @@ export default function Grupos() {
     }
   }
 
+  async function cambiarAutoevaluacion() {
+    const nuevoEstado = !autoevaluacionHabilitada
+    setGuardandoAutoevaluacion(true)
+    setError('')
+    setMensajeExito('')
+    try {
+      await configurarAutoevaluacion(
+        contexto.paraleloId,
+        hemisemestreActivo.id,
+        nuevoEstado
+      )
+      setAutoevaluacionHabilitada(nuevoEstado)
+      setMensajeExito(
+        nuevoEstado
+          ? 'La autoevaluación quedó habilitada para los estudiantes.'
+          : 'La autoevaluación quedó cerrada.'
+      )
+    } catch (e) {
+      setError(`Error al cambiar autoevaluación: ${e.message}`)
+    } finally {
+      setGuardandoAutoevaluacion(false)
+    }
+  }
+
   if (cargando) return <LoadingSkeleton variant="grupos" />
   if (error && grupos.length === 0) return <Aviso variant="red">{error}</Aviso>
   if (!contexto)
@@ -283,7 +349,8 @@ export default function Grupos() {
             </div>
           ) : (
             <p className="text-xs text-ink-soft mt-4">
-              La asignación autónoma todavía no está disponible para esta materia.
+              La asignación autónoma todavía no está disponible para esta
+              materia.
             </p>
           )}
         </div>
@@ -392,6 +459,26 @@ export default function Grupos() {
         </div>
       )}
 
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6 p-3.5 bg-surface rounded-DEFAULT border border-black/10 dark:border-white/10">
+        <div>
+          <p className="text-xs font-semibold text-ink-soft">
+            Autoevaluación del estudiante
+          </p>
+        </div>
+        <Button
+          size="sm"
+          variant={autoevaluacionHabilitada ? 'outline' : 'primary'}
+          onClick={cambiarAutoevaluacion}
+          disabled={guardandoAutoevaluacion}
+        >
+          {guardandoAutoevaluacion
+            ? 'Guardando…'
+            : autoevaluacionHabilitada
+              ? 'Cerrar autoevaluación'
+              : 'Habilitar autoevaluación'}
+        </Button>
+      </div>
+
       {grupos.length === 0 ? (
         <Aviso>
           No hay grupos en este hemisemestre todavía.{' '}
@@ -427,6 +514,18 @@ export default function Grupos() {
                     hemisemestreId: hemisemestreActivo.id,
                     hemisemestreNombre: hemisemestreActivo.nombre,
                     paraleloId: contexto.paraleloId
+                  }
+                })
+              }
+              onVerAutoevaluacion={(personaId, nombreEstudiante, rolGrupo) =>
+                navigate(`/profesor/autoevaluacion/${personaId}`, {
+                  state: {
+                    estudianteId: personaId,
+                    nombreEstudiante,
+                    grupoNumero: g.numero,
+                    rolGrupo,
+                    hemisemestreId: hemisemestreActivo.id,
+                    hemisemestreNombre: hemisemestreActivo.nombre
                   }
                 })
               }
@@ -484,6 +583,7 @@ function CardGrupo({
   mapaCalif,
   mapaNotas,
   onCalificar,
+  onVerAutoevaluacion,
   onToggleCheck,
   esModificado
 }) {
@@ -568,7 +668,14 @@ function CardGrupo({
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => setDetalle({ nombre: m.nombre, nota })}
+                  onClick={() =>
+                    setDetalle({
+                      nombre: m.nombre,
+                      nota,
+                      usuarioId: m.usuarioId,
+                      rolGrupo: m.rolGrupo
+                    })
+                  }
                 >
                   Ver detalles
                 </Button>
@@ -606,7 +713,7 @@ function CardGrupo({
             >
               <div className="flex items-start justify-between gap-4 mb-4">
                 <div>
-                  <p className="text-xs font-bold text-sice-green">
+                  <p className="text-xs font-bold text-sice-green dark:text-emerald-400">
                     Grupo {grupo.numero}
                   </p>
                   <h3 id={`detalles-${grupo.id}`} className="text-lg">
@@ -636,6 +743,22 @@ function CardGrupo({
                 <div className="pt-3 mt-2 border-t border-black/10 dark:border-white/15">
                   <DetalleNota label="Nota final" valor={detalle.nota?.final} />
                 </div>
+                <div className="pt-3 mt-2">
+                  <DetalleNota label="Nota autoevaluación" valor={detalle.nota?.autoevaluacion} />
+                </div>
+                <Button
+                  className="w-full mt-2"
+                  variant="outline"
+                  onClick={() =>
+                    onVerAutoevaluacion(
+                      detalle.usuarioId,
+                      detalle.nombre,
+                      detalle.rolGrupo
+                    )
+                  }
+                >
+                  Ver autoevaluación
+                </Button>
               </div>
             </div>
           </div>,

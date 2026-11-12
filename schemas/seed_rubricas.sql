@@ -6,6 +6,7 @@
 --   • "Referencias bibliográficas en diapositivas": ahora 3 niveles
 --     Siempre 10 / A veces 5 / No 0  (antes máx. 15, con 4 opciones).
 --   La calificación docente del expositor suma 70 pts (Informe + Diapositivas).
+--   Cada coevaluación suma 30 pts, con opciones de 5 / 10 / 15.
 --   La exposición oral se evalúa únicamente mediante la coevaluación estudiantil.
 --   La aplicación del cuestionario se evalúa únicamente en COEVAL_EVALUADOR.
 --
@@ -190,7 +191,7 @@ begin
   --  únicamente en COEVAL_EVALUADOR. Total docente del evaluador: 30 + 40 = 70 pts.)
 
   -- ================= COEVAL_EXPOSITOR =================
-  -- Categoría única: Exposición oral (ponderado a 50 % de la nota de coevaluación)
+  -- Categoría única: Exposición oral (30 puntos = 30 %)
   -- Es el único lugar donde se evalúa la exposición oral (ver migración incorporada arriba).
   insert into public.rubricas (tipo, nombre) values (
     'COEVAL_EXPOSITOR', 'Coevaluación de expositores (compañeros)'
@@ -206,9 +207,9 @@ begin
     1
   ) returning id into k_id;
   insert into public.rubrica_opciones (criterio_id, etiqueta, puntos, orden) values
-    (k_id, 'No',      25, 1),
-    (k_id, 'A veces', 15, 2),
-    (k_id, 'Siempre',  5, 3);
+    (k_id, 'No',       15, 1),
+    (k_id, 'A veces', 10, 2),
+    (k_id, 'Siempre', 5, 3);
 
   insert into public.rubrica_criterios (categoria_id, nombre, observacion, orden) values (
     c_id, 'Transmite claramente la información',
@@ -217,12 +218,12 @@ begin
     2
   ) returning id into k_id;
   insert into public.rubrica_opciones (criterio_id, etiqueta, puntos, orden) values
-    (k_id, 'Siempre',  25, 1),
-    (k_id, 'A veces',  15, 2),
+    (k_id, 'Siempre', 15, 1),
+    (k_id, 'A veces', 10, 2),
     (k_id, 'No',        5, 3);
 
   -- ================= COEVAL_EVALUADOR =================
-  -- Categoría única: Aplicación del cuestionario (ponderado a 30 % de la nota de coevaluación)
+  -- Categoría única: Aplicación del cuestionario (30 puntos = 30 %)
   insert into public.rubricas (tipo, nombre) values (
     'COEVAL_EVALUADOR', 'Coevaluación del evaluador (compañeros)'
   ) returning id into r_id;

@@ -944,3 +944,162 @@ begin
   end loop;
 end
 $$;
+
+-- ============================================================
+-- 9. AUTOEVALUACIÓN DEL ESTUDIANTE
+-- ============================================================
+
+-- La autoevaluación es evidencia independiente de la nota final.
+create table public.configuracion_autoevaluacion (
+  paralelo_id     uuid not null references public.paralelos(id) on delete cascade,
+  hemisemestre_id uuid not null references public.hemisemestres(id) on delete cascade,
+  habilitada      boolean not null default false,
+  actualizado_en  timestamptz not null default now(),
+  primary key (paralelo_id, hemisemestre_id)
+);
+
+create table public.autoevaluaciones (
+  id              uuid primary key default gen_random_uuid(),
+  estudiante_id   uuid not null references public.usuarios(id) on delete cascade,
+  hemisemestre_id uuid not null references public.hemisemestres(id) on delete cascade,
+  rubrica_id      uuid not null references public.rubricas(id) on delete restrict,
+  respuestas      jsonb not null,
+  puntaje         numeric not null,
+  actualizado_en  timestamptz not null default now(),
+  unique (estudiante_id, hemisemestre_id, rubrica_id)
+);
+
+create or replace function public.validar_autoevaluacion()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_paralelo_id uuid;
+  v_rol text;
+  v_tipo text;
+begin
+  select paralelo_id into v_paralelo_id
+    from public.hemisemestres where id = new.hemisemestre_id;
+
+  if v_paralelo_id is null or not exists (
+    select 1 from public.matriculas
+    where paralelo_id = v_paralelo_id and usuario_id = new.estudiante_id
+  ) then
+    raise exception 'El estudiante no pertenece al paralelo de la autoevaluación';
+  end if;
+
+  if not exists (
+    select 1 from public.configuracion_autoevaluacion
+    where paralelo_id = v_paralelo_id
+      and hemisemestre_id = new.hemisemestre_id
+      and habilitada
+  ) then
+    raise exception 'La autoevaluación aún no está habilitada por el docente';
+  end if;
+
+  select rol_grupo into v_rol
+    from public.grupo_miembros gm
+    join public.grupos g on g.id = gm.grupo_id
+   where gm.usuario_id = new.estudiante_id
+     and g.paralelo_id = v_paralelo_id
+   limit 1;
+
+  select tipo into v_tipo
+    from public.rubricas
+   where id = new.rubrica_id and activa;
+
+  if v_rol is null or v_tipo is null or (
+    v_rol = 'expositor'
+    and v_tipo not in ('CALIF_EXPOSITOR', 'COEVAL_EXPOSITOR')
+  ) or (
+    v_rol = 'evaluador'
+    and v_tipo not in ('CALIF_EVALUADOR', 'COEVAL_EVALUADOR')
+  ) then
+    raise exception 'La rúbrica no corresponde al rol del estudiante';
+  end if;
+
+  return new;
+end;
+$$;
+
+create trigger trg_validar_autoevaluacion
+before insert or update on public.autoevaluaciones
+for each row execute function public.validar_autoevaluacion();
+
+alter table public.configuracion_autoevaluacion enable row level security;
+alter table public.autoevaluaciones enable row level security;
+
+grant select, insert, update, delete
+on public.configuracion_autoevaluacion, public.autoevaluaciones
+to authenticated, service_role;
+
+create policy "config_autoevaluacion_select"
+on public.configuracion_autoevaluacion
+for select using (public.puede_ver_paralelo(paralelo_id));
+
+create policy "config_autoevaluacion_write"
+on public.configuracion_autoevaluacion
+for all using (public.puede_gestionar_paralelo(paralelo_id))
+with check (public.puede_gestionar_paralelo(paralelo_id));
+
+create policy "autoevaluaciones_select"
+on public.autoevaluaciones
+for select using (estudiante_id = auth.uid() or public.es_staff());
+
+create policy "autoevaluaciones_insert"
+on public.autoevaluaciones
+for insert with check (estudiante_id = auth.uid());
+
+create policy "autoevaluaciones_update"
+on public.autoevaluaciones
+for update using (estudiante_id = auth.uid())
+with check (estudiante_id = auth.uid());
+
+create or replace function public.configurar_autoevaluacion(
+  p_paralelo_id uuid,
+  p_hemisemestre_id uuid,
+  p_habilitada boolean
+) returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.puede_gestionar_paralelo(p_paralelo_id) then
+    raise exception 'No autorizado';
+  end if;
+
+  insert into public.configuracion_autoevaluacion
+    (paralelo_id, hemisemestre_id, habilitada, actualizado_en)
+  values (p_paralelo_id, p_hemisemestre_id, p_habilitada, now())
+  on conflict (paralelo_id, hemisemestre_id)
+  do update set habilitada = excluded.habilitada, actualizado_en = now();
+end;
+$$;
+
+revoke all on function public.configurar_autoevaluacion(uuid, uuid, boolean)
+from public;
+grant execute on function public.configurar_autoevaluacion(uuid, uuid, boolean)
+to authenticated;
+
+do $$
+begin
+  if exists (
+    select 1 from pg_publication where pubname = 'supabase_realtime'
+  ) and not exists (
+    select 1
+      from pg_publication p
+      join pg_publication_rel pr on pr.prpubid = p.oid
+      join pg_class c on c.oid = pr.prrelid
+      join pg_namespace n on n.oid = c.relnamespace
+     where p.pubname = 'supabase_realtime'
+       and n.nspname = 'public'
+       and c.relname = 'configuracion_autoevaluacion'
+  ) then
+    alter publication supabase_realtime
+      add table public.configuracion_autoevaluacion;
+  end if;
+end
+$$;

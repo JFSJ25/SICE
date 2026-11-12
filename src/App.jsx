@@ -16,9 +16,11 @@ import MiGrupo from './pages/estudiante/MiGrupo.jsx'
 import Coevaluar from './pages/estudiante/Coevaluar.jsx'
 import CoevaluarForm from './pages/estudiante/CoevaluarForm.jsx'
 import Notas from './pages/estudiante/Notas.jsx'
+import Autoevaluar from './pages/estudiante/Autoevaluar.jsx'
 import Cuenta from './pages/Cuenta.jsx'
 import Estudiantes from './pages/profesor/Estudiantes.jsx'
 import Reportes from './pages/profesor/Reportes.jsx'
+import Autoevaluacion from './pages/profesor/Autoevaluacion.jsx'
 import AcercaDe from './pages/AcercaDe.jsx'
 
 import './App.css'
@@ -162,6 +164,14 @@ export default function App() {
                 </RequiereProfesor>
               }
             />
+            <Route
+              path="profesor/autoevaluacion/:estudianteId"
+              element={
+                <RequiereProfesor>
+                  <Autoevaluacion />
+                </RequiereProfesor>
+              }
+            />
 
             <Route path="cuenta" element={<Cuenta />} />
             <Route path="acerca-de" element={<AcercaDe />} />
@@ -196,6 +206,14 @@ export default function App() {
               element={
                 <RequiereEstudiante>
                   <Notas />
+                </RequiereEstudiante>
+              }
+            />
+            <Route
+              path="estudiante/autoevaluar"
+              element={
+                <RequiereEstudiante>
+                  <Autoevaluar />
                 </RequiereEstudiante>
               }
             />

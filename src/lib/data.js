@@ -485,6 +485,90 @@ export async function obtenerEstadoCoevaluacionGrupo(grupoId, hemisemestreId) {
   return Boolean(data?.coevaluacion_habilitada)
 }
 
+// ---- Autoevaluación del estudiante ----
+
+export async function obtenerEstadoAutoevaluacion(paraleloId, hemisemestreId) {
+  const { data, error } = await supabase
+    .from('configuracion_autoevaluacion')
+    .select('habilitada')
+    .eq('paralelo_id', paraleloId)
+    .eq('hemisemestre_id', hemisemestreId)
+    .maybeSingle()
+  if (error) throw error
+  return Boolean(data?.habilitada)
+}
+
+export async function configurarAutoevaluacion(
+  paraleloId,
+  hemisemestreId,
+  habilitada
+) {
+  const { error } = await supabase.rpc('configurar_autoevaluacion', {
+    p_paralelo_id: paraleloId,
+    p_hemisemestre_id: hemisemestreId,
+    p_habilitada: Boolean(habilitada)
+  })
+  if (error) throw error
+}
+
+export async function obtenerAutoevaluaciones(
+  estudianteId,
+  hemisemestreId,
+  rubricaIds
+) {
+  const { data, error } = await supabase
+    .from('autoevaluaciones')
+    .select('id, rubrica_id, respuestas, puntaje, actualizado_en')
+    .eq('estudiante_id', estudianteId)
+    .eq('hemisemestre_id', hemisemestreId)
+    .in('rubrica_id', rubricaIds)
+  if (error) throw error
+  return data ?? []
+}
+
+export async function obtenerMapaAutoevaluaciones(
+  estudianteIds,
+  hemisemestreId,
+  rubricaIds
+) {
+  const mapa = new Map()
+  if (estudianteIds.length === 0 || rubricaIds.length === 0) return mapa
+
+  const { data, error } = await supabase
+    .from('autoevaluaciones')
+    .select('estudiante_id, rubrica_id, puntaje')
+    .eq('hemisemestre_id', hemisemestreId)
+    .in('estudiante_id', estudianteIds)
+    .in('rubrica_id', rubricaIds)
+  if (error) throw error
+
+  data.forEach(fila => {
+    const filas = mapa.get(fila.estudiante_id) ?? []
+    filas.push(fila)
+    mapa.set(fila.estudiante_id, filas)
+  })
+  return mapa
+}
+
+export async function guardarAutoevaluaciones(
+  estudianteId,
+  hemisemestreId,
+  evaluaciones
+) {
+  const filas = evaluaciones.map(evaluacion => ({
+    estudiante_id: estudianteId,
+    hemisemestre_id: hemisemestreId,
+    rubrica_id: evaluacion.rubricaId,
+    respuestas: evaluacion.respuestas,
+    puntaje: evaluacion.puntaje,
+    actualizado_en: new Date().toISOString()
+  }))
+  const { error } = await supabase.from('autoevaluaciones').upsert(filas, {
+    onConflict: 'estudiante_id,hemisemestre_id,rubrica_id'
+  })
+  if (error) throw error
+}
+
 export async function actualizarTemaGrupo(grupoId, hemisemestreId, tema) {
   const { error } = await supabase
     .from('grupo_temas')

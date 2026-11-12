@@ -18,13 +18,13 @@ export default function RubricaForm({
   prefijo = '',
   soloLectura = false
 }) {
-  const max = puntajeMaximo(rubrica)
-  const puntajeActual = calcularPuntaje(rubrica, seleccionadas)
-  const completo = rubrica.rubrica_categorias.every(cat =>
-    cat.rubrica_criterios.every(crit =>
-      Boolean(obtenerOpcionSeleccionadaId(seleccionadas, crit.id))
-    )
-  )
+  // const max = puntajeMaximo(rubrica)
+  // const puntajeActual = calcularPuntaje(rubrica, seleccionadas)
+  // const completo = rubrica.rubrica_categorias.every(cat =>
+  //   cat.rubrica_criterios.every(crit =>
+  //     Boolean(obtenerOpcionSeleccionadaId(seleccionadas, crit.id))
+  //   )
+  // )
 
   return (
     <div>
@@ -69,7 +69,7 @@ export default function RubricaForm({
                 >
                   <div className="flex justify-between items-baseline gap-2 mb-1">
                     <p className="text-sm font-semibold">{crit.nombre}</p>
-                    {soloLectura && (
+                    {/* {soloLectura && (
                       <span
                         className={`text-xs font-bold whitespace-nowrap ${
                           opSeleccionada
@@ -79,7 +79,7 @@ export default function RubricaForm({
                       >
                         {opSeleccionada ? `${opSeleccionada.puntos} pts` : '—'}
                       </span>
-                    )}
+                    )} */}
                   </div>
                   {crit.observacion && (
                     <p className="text-xs text-ink-soft mb-2.5 leading-relaxed">
@@ -145,7 +145,7 @@ export default function RubricaForm({
                           </span>
                           <span
                             className={`text-xs font-bold flex-shrink-0 pl-2 ${
-                              marcada ? 'text-sice-green' : 'text-ink-soft'
+                              marcada ? 'text-sice-green dark:text-emerald-400' : 'text-ink-soft'
                             }`}
                           >
                             {op.puntos} pts
