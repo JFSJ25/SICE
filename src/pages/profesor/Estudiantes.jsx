@@ -16,6 +16,7 @@ import CabeceraPagina from '../../components/shared/CabeceraPagina.jsx'
 import ResultadoPassword from '../../components/profesor/ResultadoPassword.jsx'
 import SearchIcon from '@mui/icons-material/Search'
 import LockResetIcon from '@mui/icons-material/LockReset'
+import { notificar } from '../../lib/notifications.js'
 
 export default function Estudiantes() {
   const [busqueda, setBusqueda] = useState('')
@@ -36,7 +37,9 @@ export default function Estudiantes() {
     try {
       setEstudiantes(await obtenerEstudiantesAdministrables(termino))
     } catch (e) {
-      setError(e.message ?? 'No se pudieron cargar los estudiantes.')
+      const mensaje = e.message ?? 'No se pudieron cargar los estudiantes.'
+      setError(mensaje)
+      notificar.error(mensaje)
     } finally {
       setCargando(false)
     }
@@ -54,8 +57,11 @@ export default function Estudiantes() {
     setCopiado(false)
     try {
       setResultado(await restablecerPasswordEstudiante(estudiante.id))
+      notificar.exito('Contraseña restablecida correctamente.')
     } catch (e) {
-      setError(e.message ?? 'No se pudo restablecer la contraseña.')
+      const mensaje = e.message ?? 'No se pudo restablecer la contraseña.'
+      setError(mensaje)
+      notificar.error(mensaje)
     } finally {
       setProcesandoId(null)
     }
@@ -65,6 +71,7 @@ export default function Estudiantes() {
     if (!resultado?.password_temporal) return
     await navigator.clipboard.writeText(resultado.password_temporal)
     setCopiado(true)
+    notificar.info('Contraseña copiada al portapapeles.')
   }
 
   // if (cargando && estudiantes.length === 0 && !busqueda) {

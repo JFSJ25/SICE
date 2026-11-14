@@ -25,6 +25,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import DeleteIcon from '@mui/icons-material/Delete'
+import { notificar } from '../../../lib/notifications.js'
 
 export function SelectorParalelo({ paralelos, value, onChange }) {
   return (
@@ -95,6 +96,7 @@ export default function StepParalelo({
       if (ms.length > 0) setMateriaId(ms[0].id)
     } catch (e) {
       setError(e.message)
+      notificar.error(e)
     } finally {
       setCargando(false)
     }
@@ -109,8 +111,10 @@ export default function StepParalelo({
       setPeriodoId(nuevo.id)
       setNuevoPeriodo('')
       setMostrarNuevo(false)
+      notificar.exito('Periodo creado correctamente.')
     } catch (e) {
       setError(e.message)
+      notificar.error(e)
     } finally {
       setGuardando(false)
     }
@@ -131,8 +135,10 @@ export default function StepParalelo({
     try {
       await eliminarPeriodo(periodo.id)
       await cargarDatos()
+      notificar.exito('Periodo eliminado correctamente.')
     } catch (e) {
       setError(e.message)
+      notificar.error(e)
     } finally {
       setGuardando(false)
     }
@@ -153,8 +159,10 @@ export default function StepParalelo({
     try {
       await eliminarParalelo(paralelo.id)
       await cargarDatos()
+      notificar.exito('Paralelo eliminado correctamente.')
     } catch (e) {
       setError(e.message)
+      notificar.error(e)
     } finally {
       setGuardando(false)
     }
@@ -168,15 +176,19 @@ export default function StepParalelo({
       try {
         const hs = await obtenerHemisemestres(paraleloSeleccionado)
         onAvanzar({ paraleloId: paraleloSeleccionado, hemisemestres: hs })
+        notificar.exito('Paralelo seleccionado correctamente.')
       } catch (e) {
         setError(e.message)
+        notificar.error(e)
       } finally {
         setGuardando(false)
       }
       return
     }
     if (!periodoId || !materiaId || !codigo) {
-      setError('Completa todos los campos.')
+      const mensaje = 'Completa todos los campos.'
+      setError(mensaje)
+      notificar.aviso(mensaje)
       return
     }
     setGuardando(true)
@@ -212,8 +224,10 @@ export default function StepParalelo({
       const paraleloInicial = paralelosCreados[0]
       const hs = await obtenerHemisemestres(paraleloInicial.id)
       onAvanzar({ paraleloId: paraleloInicial.id, hemisemestres: hs })
+      notificar.exito('Paralelo creado y activado correctamente.')
     } catch (e) {
       setError(e.message)
+      notificar.error(e)
     } finally {
       setGuardando(false)
     }
@@ -225,7 +239,10 @@ export default function StepParalelo({
       .then(hemisemestres =>
         onParaleloSeleccionado({ paraleloId: id, hemisemestres })
       )
-      .catch(e => setError(e.message))
+      .catch(e => {
+        setError(e.message)
+        notificar.error(e)
+      })
   }
 
   if (cargando) return <LoadingSkeleton variant="admin-paralelo" />

@@ -320,7 +320,7 @@ export default function Shell() {
             </p>
             <p className="text-xs text-white/65 mb-3">{rolTexto}</p>
             <div className="mb-2">
-              <ThemeToggle />
+              <ThemeToggle darkModeOnly/>
             </div>
             <button
               onClick={handleLogout}

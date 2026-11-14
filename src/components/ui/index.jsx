@@ -215,25 +215,27 @@ export function Textarea({ className = '', ...props }) {
   )
 }
 
-export function ThemeToggle({ compact = false }) {
+export function ThemeToggle({ compact = false, darkModeOnly = false }) {
   const { tema, alternarTema } = useTheme()
   const esOscuro = tema === 'dark'
+  const etiqueta = esOscuro ? 'Activar modo claro' : 'Activar modo oscuro'
+  const ThemeIcon = esOscuro ? LightModeIcon : DarkModeIcon
+
+  const colores = darkModeOnly
+    ? 'border-white/15 bg-transparent text-white/70 hover:bg-white/10 hover:text-white'
+    : 'border-slate-900/15 bg-white/60 text-slate-700 hover:bg-white/90 hover:text-slate-900 dark:border-white/15 dark:bg-transparent dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-white'
 
   return (
     <button
       type="button"
       onClick={alternarTema}
-      aria-label={esOscuro ? 'Activar modo claro' : 'Activar modo oscuro'}
-      title={esOscuro ? 'Activar modo claro' : 'Activar modo oscuro'}
-      className={`inline-flex items-center justify-center gap-2 rounded-sm border border-slate-900/15 bg-white/60 text-slate-700 backdrop-blur-sm transition-colors hover:bg-white/90 hover:text-slate-900 dark:border-white/15 dark:bg-transparent dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-white ${
+      aria-label={etiqueta}
+      title={etiqueta}
+      className={`inline-flex items-center justify-center gap-2 rounded-sm border backdrop-blur-sm transition-colors ${colores} ${
         compact ? 'h-9 w-9' : 'w-full px-3 py-2 text-xs font-semibold'
       }`}
     >
-      {esOscuro ? (
-        <LightModeIcon className="w-4 h-4" />
-      ) : (
-        <DarkModeIcon className="w-4 h-4" />
-      )}
+      <ThemeIcon className="w-4 h-4" />
       {!compact && <span>{esOscuro ? 'Modo claro' : 'Modo oscuro'}</span>}
     </button>
   )

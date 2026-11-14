@@ -7,6 +7,7 @@ import {
   obtenerEstadoAutoevaluacion
 } from '../../lib/data.js'
 import { leerRespuestas, obtenerRubrica } from '../../lib/rubricas.js'
+import { notificar } from '../../lib/notifications.js'
 import RubricaForm from '../../components/evaluacion/RubricaForm.jsx'
 import {
   Eyebrow,
@@ -18,7 +19,6 @@ import {
 } from '../../components/ui/index.jsx'
 import SendIcon from '@mui/icons-material/Send'
 import EditIcon from '@mui/icons-material/Edit'
-import CloseIcon from '@mui/icons-material/Close'
 import { useRealtimeRefresh } from '../../lib/realtime.js'
 
 const TIPOS_EXPOSITOR = ['CALIF_EXPOSITOR', 'COEVAL_EXPOSITOR']
@@ -118,6 +118,7 @@ export default function Autoevaluar() {
       setEditando(false)
     } catch (e) {
       setError(e.message)
+      notificar.error(e)
     } finally {
       setCargando(false)
     }
@@ -125,7 +126,9 @@ export default function Autoevaluar() {
 
   async function handleEnviar() {
     if (evaluaciones.some(e => !e.completo)) {
-      setError('Falta seleccionar una opción en algún criterio.')
+      const mensaje = 'Falta seleccionar una opción en algún criterio.'
+      setError(mensaje)
+      notificar.aviso(mensaje)
       return
     }
     setGuardando(true)
@@ -138,6 +141,7 @@ export default function Autoevaluar() {
         evaluaciones
       )
       setExito(true)
+      notificar.exito('Tu autoevaluación fue guardada correctamente.')
       setEditando(false)
       setSeleccionesGuardadas(
         Object.fromEntries(
@@ -149,6 +153,7 @@ export default function Autoevaluar() {
       )
     } catch (e) {
       setError(e.message)
+      notificar.error(e)
     } finally {
       setGuardando(false)
     }

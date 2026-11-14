@@ -12,6 +12,7 @@ import {
   Badge,
   LoadingSkeleton
 } from '../../components/ui/index.jsx'
+import { notificar } from '../../lib/notifications.js'
 import { useRealtimeRefresh } from '../../lib/realtime.js'
 import TarjetaAsignacionGrupo from '../../components/estudiante/TarjetaAsignacionGrupo.jsx'
 
@@ -79,6 +80,7 @@ export default function MiGrupo() {
       )
     } catch (e) {
       setError(e.message)
+      notificar.error(e)
     } finally {
       setCargando(false)
     }
@@ -109,8 +111,10 @@ export default function MiGrupo() {
       })
       await cargar(true)
       setExito('Tu asignación se guardó correctamente.')
+      notificar.exito('Tu asignación se guardó correctamente.')
     } catch (e) {
       setError(e.message)
+      notificar.error(e)
     } finally {
       setGrupoGuardandoId(null)
     }

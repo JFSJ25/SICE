@@ -25,6 +25,7 @@ import { useRealtimeRefresh } from '../../lib/realtime.js'
 import GrupoCard from '../../components/profesor/GrupoCard.jsx'
 import ControlCoevaluacion from '../../components/profesor/ControlCoevaluacion.jsx'
 import ControlAutoevaluacion from '../../components/profesor/ControlAutoevaluacion.jsx'
+import { notificar } from '../../lib/notifications.js'
 
 export default function Grupos() {
   const { contexto, hemisemestreActivo } = useOutletContext()
@@ -189,6 +190,7 @@ export default function Grupos() {
       setMapaNotas(notas)
     } catch (e) {
       setError(e.message)
+      notificar.error(e)
     } finally {
       setCargando(false)
     }
@@ -205,8 +207,14 @@ export default function Grupos() {
         await finalizarAsignacion(contexto.paraleloId)
         setEstadoAsignacion('finalizada')
       }
+      notificar.exito(
+        estadoAsignacion === 'finalizada'
+          ? 'La asignación fue reabierta.'
+          : 'La asignación fue finalizada.'
+      )
     } catch (e) {
       setError(e.message)
+      notificar.error(e)
     } finally {
       setGuardandoEstado(false)
     }
@@ -252,8 +260,11 @@ export default function Grupos() {
         new Map(grupos.map(g => [g.id, Boolean(g.coevaluacionHabilitada)]))
       )
       setMensajeExito('Se guardaron correctamente los cambios de coevaluación.')
+      notificar.exito('Cambios de coevaluación guardados.')
     } catch (e) {
-      setError(`Error al guardar coevaluaciones: ${e.message}`)
+      const mensaje = `Error al guardar coevaluaciones: ${e.message}`
+      setError(mensaje)
+      notificar.error(mensaje)
     } finally {
       setGuardandoCoeval(false)
     }
@@ -276,8 +287,15 @@ export default function Grupos() {
           ? 'La autoevaluación quedó habilitada para los estudiantes.'
           : 'La autoevaluación quedó cerrada.'
       )
+      notificar.exito(
+        nuevoEstado
+          ? 'La autoevaluación quedó habilitada.'
+          : 'La autoevaluación quedó cerrada.'
+      )
     } catch (e) {
-      setError(`Error al cambiar autoevaluación: ${e.message}`)
+      const mensaje = `Error al cambiar autoevaluación: ${e.message}`
+      setError(mensaje)
+      notificar.error(mensaje)
     } finally {
       setGuardandoAutoevaluacion(false)
     }

@@ -22,6 +22,7 @@ import {
 } from '../../components/ui/index.jsx'
 import SaveIcon from '@mui/icons-material/Save'
 import VolverLink from '../../components/shared/VolverLink.jsx'
+import { notificar } from '../../lib/notifications.js'
 
 export default function Calificar() {
   const { estudianteId } = useParams()
@@ -82,6 +83,7 @@ export default function Calificar() {
       }
     } catch (e) {
       setError(e.message)
+      notificar.error(e)
     } finally {
       setCargando(false)
     }
@@ -94,7 +96,9 @@ export default function Calificar() {
       seleccionadas
     )
     if (!completo) {
-      setError('Falta seleccionar una opción en algún criterio.')
+      const mensaje = 'Falta seleccionar una opción en algún criterio.'
+      setError(mensaje)
+      notificar.aviso(mensaje)
       return
     }
 
@@ -112,9 +116,11 @@ export default function Calificar() {
         comentario: comentario.trim() || null
       })
       setExito(true)
+      notificar.exito('Calificación guardada correctamente.')
       setTimeout(() => navigate(-1), 900)
     } catch (e) {
       setError(e.message)
+      notificar.error(e)
     } finally {
       setGuardando(false)
     }

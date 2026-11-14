@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
+import confetti from 'canvas-confetti'
 import { useAuth } from '../../context/AuthContext.jsx'
 import {
   obtenerCalificacionDocente,
@@ -16,10 +17,11 @@ import {
   LoadingSkeleton
 } from '../../components/ui/index.jsx'
 import { useRealtimeRefresh } from '../../lib/realtime.js'
-import RefreshIcon from '@mui/icons-material/Refresh'
+// import RefreshIcon from '@mui/icons-material/Refresh'
 import AssignmentIcon from '@mui/icons-material/Assignment'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
+import { notificar } from '../../lib/notifications.js'
 
 const PESO_PROF = 0.7
 const PESO_COEV = 0.3
@@ -65,6 +67,28 @@ export default function Notas() {
     }
     cargar()
   }, [contexto?.paraleloId, hemisemestres.length])
+
+  useEffect(() => {
+    if (!perfil?.id) return
+
+    const claveCelebracion = `sice:notas:nota-maxima-celebrada:${perfil.id}`
+    if (sessionStorage.getItem(claveCelebracion)) return
+
+    for (const { califDoc, rubricaDoc } of bloques) {
+      if (!califDoc || !rubricaDoc) continue
+
+      const maxDoc = puntajeMaximo(rubricaDoc)
+      if (Number(califDoc.puntaje) !== maxDoc) continue
+
+      sessionStorage.setItem(claveCelebracion, '1')
+      confetti({
+        particleCount: 140,
+        spread: 75,
+        origin: { y: 0.6 }
+      })
+      break
+    }
+  }, [bloques, perfil?.id])
 
   useRealtimeRefresh({
     subscriptions: realtimeSubscriptions,
@@ -142,6 +166,7 @@ export default function Notas() {
       setBloques(bs)
     } catch (e) {
       setError(e.message)
+      notificar.error(e)
     } finally {
       setCargando(false)
     }

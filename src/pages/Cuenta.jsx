@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { cambiarPasswordPropia } from '../lib/auth.js'
+import { notificar } from '../lib/notifications.js'
 import {
   Aviso,
   Button,
@@ -30,17 +31,21 @@ export default function Cuenta() {
     setExito(false)
 
     if (passwordNueva.length < PASSWORD_MINIMA) {
-      setError(
-        `La nueva contraseña debe tener al menos ${PASSWORD_MINIMA} caracteres.`
-      )
+      const mensaje = `La nueva contraseña debe tener al menos ${PASSWORD_MINIMA} caracteres.`
+      setError(mensaje)
+      notificar.aviso(mensaje)
       return
     }
     if (passwordNueva !== confirmacion) {
-      setError('La confirmación no coincide con la nueva contraseña.')
+      const mensaje = 'La confirmación no coincide con la nueva contraseña.'
+      setError(mensaje)
+      notificar.aviso(mensaje)
       return
     }
     if (passwordNueva === passwordActual) {
-      setError('La nueva contraseña debe ser diferente de la actual.')
+      const mensaje = 'La nueva contraseña debe ser diferente de la actual.'
+      setError(mensaje)
+      notificar.aviso(mensaje)
       return
     }
 
@@ -55,8 +60,11 @@ export default function Cuenta() {
       setPasswordNueva('')
       setConfirmacion('')
       setExito(true)
+      notificar.exito('Tu contraseña se actualizó correctamente.')
     } catch (e) {
-      setError(e.message ?? 'No se pudo cambiar la contraseña.')
+      const mensaje = e.message ?? 'No se pudo cambiar la contraseña.'
+      setError(mensaje)
+      notificar.error(mensaje)
     } finally {
       setProcesando(false)
     }

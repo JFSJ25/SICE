@@ -11,6 +11,7 @@ import {
 } from '../../components/ui/index.jsx'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import TarjetaCoevaluacion from '../../components/estudiante/TarjetaCoevaluacion.jsx'
+import { notificar } from '../../lib/notifications.js'
 
 export default function Coevaluar() {
   const { perfil } = useAuth()
@@ -56,7 +57,10 @@ export default function Coevaluar() {
       setGrupos(otros)
       setEstados(checks)
     } catch (e) {
-      if (version === cargarVersionRef.current) setError(e.message)
+      if (version === cargarVersionRef.current) {
+        setError(e.message)
+        notificar.error(e)
+      }
     } finally {
       if (version === cargarVersionRef.current) setCargando(false)
     }

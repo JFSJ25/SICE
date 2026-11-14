@@ -14,6 +14,7 @@ import {
 } from '../../components/ui/index.jsx'
 import { useRealtimeRefresh } from '../../lib/realtime.js'
 import CabeceraPagina from '../../components/shared/CabeceraPagina.jsx'
+import { notificar } from '../../lib/notifications.js'
 
 export default function Pendientes() {
   const { contexto, hemisemestreActivo } = useOutletContext()
@@ -58,6 +59,7 @@ export default function Pendientes() {
       setPendientes(ps)
     } catch (e) {
       setError(e.message)
+      notificar.error(e)
     } finally {
       setCargando(false)
     }

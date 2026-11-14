@@ -17,6 +17,7 @@ import {
 } from '../../components/ui/index.jsx'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import SendIcon from '@mui/icons-material/Send'
+import { notificar } from '../../lib/notifications.js'
 
 export default function CoevaluarForm() {
   const { grupoId } = useParams()
@@ -64,6 +65,7 @@ export default function CoevaluarForm() {
       }
     } catch (e) {
       setError(e.message)
+      notificar.error(e)
     } finally {
       setCargando(false)
     }
@@ -71,7 +73,9 @@ export default function CoevaluarForm() {
 
   async function handleEnviar() {
     if (!habilitado) {
-      setError('La coevaluación para este grupo aún no ha sido habilitada por el docente.')
+      const mensaje = 'La coevaluación para este grupo aún no ha sido habilitada por el docente.'
+      setError(mensaje)
+      notificar.aviso(mensaje)
       return
     }
     const evaluaciones = miembros.map(miembro => {
@@ -90,7 +94,9 @@ export default function CoevaluarForm() {
       }
     })
     if (evaluaciones.some(evaluacion => !evaluacion.completo)) {
-      setError('Falta seleccionar una opción en algún criterio.')
+      const mensaje = 'Falta seleccionar una opción en algún criterio.'
+      setError(mensaje)
+      notificar.aviso(mensaje)
       return
     }
     setGuardando(true)
@@ -103,9 +109,11 @@ export default function CoevaluarForm() {
         evaluaciones
       })
       setExito(true)
+      notificar.exito('Coevaluación enviada correctamente.')
       setTimeout(() => navigate('/estudiante/coevaluar'), 900)
     } catch (e) {
       setError(e.message)
+      notificar.error(e)
     } finally {
       setGuardando(false)
     }

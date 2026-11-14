@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { iniciarSesion } from '../lib/auth.js'
+import { notificar } from '../lib/notifications.js'
 import {
   Button,
   Campo,
@@ -25,8 +26,10 @@ export default function Login() {
     setCargando(false)
     if (err) {
       setError(err)
+      notificar.error(err)
       return
     }
+    // notificar.exito('Inicio de sesión exitoso.')
     navigate('/', { replace: true })
   }
 

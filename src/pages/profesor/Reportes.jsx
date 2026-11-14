@@ -14,6 +14,7 @@ import {
 import CabeceraPagina from '../../components/shared/CabeceraPagina.jsx'
 import DownloadIcon from '@mui/icons-material/Download'
 import AssessmentIcon from '@mui/icons-material/Assessment'
+import { notificar } from '../../lib/notifications.js'
 
 const TIPOS_REPORTE = {
   primero: [1],
@@ -34,7 +35,9 @@ export default function Reportes() {
 
   async function generarReporte() {
     if (!contexto || hemisemestres.length < 2) {
-      setError('No hay un paralelo con sus dos hemisemestres disponibles.')
+      const mensaje = 'No hay un paralelo con sus dos hemisemestres disponibles.'
+      setError(mensaje)
+      notificar.aviso(mensaje)
       return
     }
 
@@ -75,11 +78,11 @@ export default function Reportes() {
       })
 
       if (pendientes.length > 0) {
-        setError(
-          `No se puede generar el reporte porque aún no está completo: ${pendientes.join(
-            '. '
-          )}.`
-        )
+        const mensaje = `No se puede generar el reporte porque aún no está completo: ${pendientes.join(
+          '. '
+        )}.`
+        setError(mensaje)
+        notificar.aviso(mensaje)
         return
       }
 
@@ -104,8 +107,11 @@ export default function Reportes() {
         nombrePeriodo: contexto.periodoNombre,
         nombresHemisemestres: nombres
       })
+      notificar.exito('Reporte generado y descargado correctamente.')
     } catch (e) {
-      setError(e.message ?? 'No se pudo generar el reporte.')
+      const mensaje = e.message ?? 'No se pudo generar el reporte.'
+      setError(mensaje)
+      notificar.error(mensaje)
     } finally {
       setProcesando(false)
     }

@@ -29,6 +29,7 @@ import SaveIcon from '@mui/icons-material/Save'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import { useRealtimeRefresh } from '../../../lib/realtime.js'
 import BuilderNuevoGrupo from '../../../components/profesor/admin/BuilderNuevoGrupo.jsx'
+import { notificar } from '../../../lib/notifications.js'
 
 export default function StepGrupos({
   paraleloId,
@@ -117,6 +118,7 @@ export default function StepGrupos({
       })
     } catch (e) {
       setError(e.message)
+      notificar.error(e)
     }
   }
 
@@ -153,6 +155,7 @@ export default function StepGrupos({
     } catch (e) {
       if (version === cargarVersionRef.current) {
         setError(e.message)
+        notificar.error(e)
       }
     } finally {
       if (version === cargarVersionRef.current) {
@@ -201,24 +204,6 @@ export default function StepGrupos({
 
       {error && <Aviso variant="red">{error}</Aviso>}
 
-      {/* Builder: crear nuevo grupo */}
-      {!catalogoFijo && sinGrupo.length > 0 && (
-        <BuilderNuevoGrupo
-          sinGrupo={sinGrupo}
-          siguienteNumero={siguienteNumero}
-          paraleloId={paraleloId}
-          hemisemestres={hemisemestres}
-          onOperacionInicio={() => {
-            operacionEnProgresoRef.current = true
-          }}
-          onOperacionFin={() => {
-            operacionEnProgresoRef.current = false
-          }}
-          onCreado={() => cargar(true)}
-          onError={setError}
-        />
-      )}
-
       {catalogoFijo && (
         <Aviso dismissible>
           Este paralelo usa siete grupos y temas fijos. Los estudiantes realizan
@@ -239,6 +224,27 @@ export default function StepGrupos({
           {sinGrupo.length === 1 ? '' : 'n'} ingresar a un grupo antes de
           finalizar la asignación.
         </Aviso>
+      )}
+
+      {/* Builder: crear nuevo grupo */}
+      {!catalogoFijo && sinGrupo.length > 0 && (
+        <BuilderNuevoGrupo
+          sinGrupo={sinGrupo}
+          siguienteNumero={siguienteNumero}
+          paraleloId={paraleloId}
+          hemisemestres={hemisemestres}
+          onOperacionInicio={() => {
+            operacionEnProgresoRef.current = true
+          }}
+          onOperacionFin={() => {
+            operacionEnProgresoRef.current = false
+          }}
+          onCreado={() => cargar(true)}
+          onError={mensaje => {
+            setError(mensaje)
+            notificar.error(mensaje)
+          }}
+        />
       )}
 
       {/* Lista de grupos existentes */}
@@ -283,8 +289,10 @@ export default function StepGrupos({
                   try {
                     await eliminarGrupo(g.id)
                     await cargar(true)
+                    notificar.exito(`Grupo ${g.numero} deshecho correctamente.`)
                   } catch (e) {
                     setError(e.message)
+                    notificar.error(e)
                   } finally {
                     operacionEnProgresoRef.current = false
                   }
@@ -301,6 +309,7 @@ export default function StepGrupos({
                     await cargar(true)
                   } catch (e) {
                     setError(e.message)
+                    notificar.error(e)
                   } finally {
                     operacionEnProgresoRef.current = false
                   }
@@ -329,12 +338,16 @@ export default function StepGrupos({
                     await cargar(true)
                   } catch (e) {
                     setError(e.message)
+                    notificar.error(e)
                   } finally {
                     operacionEnProgresoRef.current = false
                   }
                 }}
                 onTemaGuardado={() => cargar(true)}
-                onError={setError}
+                onError={mensaje => {
+                  setError(mensaje)
+                  notificar.error(mensaje)
+                }}
               />
             ))}
           </div>
@@ -452,8 +465,10 @@ function TarjetaGrupo({
       )
       onCerrarEditar()
       onTemaGuardado()
+      notificar.exito('Temas del grupo guardados.')
     } catch (e) {
       onError(e.message)
+      notificar.error(e)
     } finally {
       setGuardandoTema(false)
     }
@@ -473,8 +488,10 @@ function TarjetaGrupo({
       )
       onCerrarEditarRoles()
       onTemaGuardado()
+      notificar.exito('Roles del grupo actualizados.')
     } catch (e) {
       setErrorRoles(e.message)
+      notificar.error(e)
     } finally {
       setGuardandoRoles(false)
     }
@@ -482,7 +499,9 @@ function TarjetaGrupo({
 
   async function handleAgregar() {
     if (!estudianteAgregar) {
-      setErrorAgregar('Selecciona un estudiante.')
+      const mensaje = 'Selecciona un estudiante.'
+      setErrorAgregar(mensaje)
+      notificar.aviso(mensaje)
       return
     }
     setGuardandoAgregar(true)
@@ -491,6 +510,7 @@ function TarjetaGrupo({
       await onAgregar(estudianteAgregar, rolAgregar)
     } catch (e) {
       setErrorAgregar(e.message)
+      notificar.error(e)
     } finally {
       setGuardandoAgregar(false)
     }
@@ -500,6 +520,9 @@ function TarjetaGrupo({
     setGuardandoDeshacer(true)
     try {
       await onDeshacer()
+      notificar.exito(`Grupo ${grupo.numero} deshecho correctamente.`)
+    } catch (e) {
+      notificar.error(e)
     } finally {
       setGuardandoDeshacer(false)
       setConfirmandoDeshacer(false)

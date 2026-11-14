@@ -10,7 +10,7 @@ export default function NotFound() {
       <div className="absolute top-4 right-4">
         <ThemeToggle compact />
       </div>
-      <div className="flex flex-col items-center text-center w-full max-w-sm bg-white/95 dark:bg-slate-800 backdrop-blur rounded-2xl shadow-2xl px-8 py-10 page-enter border border-white/20">
+      <div className="w-full max-w-sm bg-white/95 dark:bg-slate-800 backdrop-blur rounded-2xl shadow-2xl px-8 py-10 page-enter border border-white/20 flex flex-col items-center text-center">
         <h1 className="text-7xl font-bold text-sice-green dark:text-emerald-400">
           404
         </h1>

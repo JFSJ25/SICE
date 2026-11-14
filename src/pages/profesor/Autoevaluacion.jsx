@@ -9,6 +9,7 @@ import {
   LoadingSkeleton
 } from '../../components/ui/index.jsx'
 import VolverLink from '../../components/shared/VolverLink.jsx'
+import { notificar } from '../../lib/notifications.js'
 
 export default function Autoevaluacion() {
   const { state } = useLocation()
@@ -57,6 +58,7 @@ export default function Autoevaluacion() {
       )
     } catch (e) {
       setError(e.message)
+      notificar.error(e)
     } finally {
       setCargando(false)
     }

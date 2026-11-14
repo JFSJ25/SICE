@@ -15,6 +15,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import DownloadIcon from '@mui/icons-material/Download'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import { notificar } from '../../../lib/notifications.js'
 
 function normalizarCuentas(data) {
   const filas = Array.isArray(data)
@@ -68,6 +69,7 @@ export default function StepEstudiantes({
       onParaleloSeleccionado({ paraleloId: id, hemisemestres })
     } catch (e) {
       setError(e.message)
+      notificar.error(e)
     }
   }
 
@@ -80,21 +82,29 @@ export default function StepEstudiantes({
     try {
       setImportacion(await importarEstudiantes(nuevoArchivo))
     } catch (e) {
-      setError(e.message ?? String(e))
+      const mensaje = e.message ?? String(e)
+      setError(mensaje)
+      notificar.error(mensaje)
     }
   }
 
   async function handleProcesar() {
     if (!archivo) {
-      setError('Selecciona un archivo Excel o CSV.')
+      const mensaje = 'Selecciona un archivo Excel o CSV.'
+      setError(mensaje)
+      notificar.aviso(mensaje)
       return
     }
     if (!importacion) {
-      setError('El archivo no se pudo importar.')
+      const mensaje = 'El archivo no se pudo importar.'
+      setError(mensaje)
+      notificar.error(mensaje)
       return
     }
     if (importacion.errores.length > 0) {
-      setError('Corrige las filas reportadas antes de crear las cuentas.')
+      const mensaje = 'Corrige las filas reportadas antes de crear las cuentas.'
+      setError(mensaje)
+      notificar.aviso(mensaje)
       return
     }
     setError('')
@@ -134,6 +144,11 @@ export default function StepEstudiantes({
 
       const res = { creados: creados.length, errores, credenciales: creados }
       setResultado(res)
+      notificar.exito(
+        `${creados.length} cuenta${creados.length !== 1 ? 's' : ''} procesada${
+          creados.length !== 1 ? 's' : ''
+        }.`
+      )
 
       // Descarga automática del Excel de credenciales
       if (creados.length > 0) descargarCredencialesExcel(creados)
@@ -147,6 +162,7 @@ export default function StepEstudiantes({
         mensaje = respuesta?.error ?? respuesta?.message ?? mensaje
       }
       setError(mensaje)
+      notificar.error(mensaje)
     } finally {
       setProcesando(false)
     }
