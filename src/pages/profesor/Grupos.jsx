@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { useOutletContext, useNavigate } from 'react-router-dom'
 import {
   obtenerGruposConDetalle,
@@ -20,15 +19,12 @@ import {
   Badge,
   Button,
   Aviso,
-  Spinner,
   LoadingSkeleton
 } from '../../components/ui/index.jsx'
-import EditIcon from '@mui/icons-material/Edit'
-import CloseIcon from '@mui/icons-material/Close'
-import SaveIcon from '@mui/icons-material/Save'
-import UndoIcon from '@mui/icons-material/Undo'
-// import RefreshIcon from '@mui/icons-material/Refresh'
 import { useRealtimeRefresh } from '../../lib/realtime.js'
+import GrupoCard from '../../components/profesor/GrupoCard.jsx'
+import ControlCoevaluacion from '../../components/profesor/ControlCoevaluacion.jsx'
+import ControlAutoevaluacion from '../../components/profesor/ControlAutoevaluacion.jsx'
 
 export default function Grupos() {
   const { contexto, hemisemestreActivo } = useOutletContext()
@@ -124,12 +120,7 @@ export default function Grupos() {
       const mapaAutoevaluaciones = await obtenerMapaAutoevaluaciones(
         ids,
         hemisemestreActivo.id,
-        [
-          rubricaExp.id,
-          rubricaEval.id,
-          rubricaCoevExp.id,
-          rubricaCoevEval.id
-        ]
+        [rubricaExp.id, rubricaEval.id, rubricaCoevExp.id, rubricaCoevEval.id]
       )
       const promediosPorEstudiante = new Map(
         await Promise.all(
@@ -163,9 +154,7 @@ export default function Grupos() {
           const promedio = promediosPorEstudiante.get(m.usuarioId)
           const autoevaluaciones = mapaAutoevaluaciones.get(m.usuarioId) ?? []
           const rubricaAutoDocente = esEvaluador ? rubricaEval : rubricaExp
-          const rubricaAutoCoev = esEvaluador
-            ? rubricaCoevEval
-            : rubricaCoevExp
+          const rubricaAutoCoev = esEvaluador ? rubricaCoevEval : rubricaCoevExp
           const autoDocente = autoevaluaciones.find(
             a => a.rubrica_id === rubricaAutoDocente.id
           )
@@ -174,7 +163,8 @@ export default function Grupos() {
           )
           const autoevaluacion =
             autoDocente && autoCoev
-              ? (Number(autoDocente.puntaje) / puntajeMaximo(rubricaAutoDocente)) *
+              ? (Number(autoDocente.puntaje) /
+                  puntajeMaximo(rubricaAutoDocente)) *
                   70 +
                 (Number(autoCoev.puntaje) / puntajeMaximo(rubricaAutoCoev)) * 30
               : null
@@ -392,92 +382,22 @@ export default function Grupos() {
 
       {/* Barra de control y guardado de coevaluación */}
       {grupos.length > 0 && (
-        <div className="md:sticky md:top-0 md:z-30 flex flex-wrap items-center justify-between gap-3 mb-6 p-3.5 bg-surface rounded-DEFAULT border border-black/10 dark:border-white/10 shadow-sm">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold text-ink-soft">
-              Habilitación de coevaluación:
-            </span>
-            <Badge variant={totalHabilitados > 0 ? 'ok' : 'pending'}>
-              {totalHabilitados} de {grupos.length} habilitados
-            </Badge>
-            {hayCambiosCoeval && (
-              <span className="inline-flex items-center text-xs font-bold px-2 py-0.5 rounded-full bg-sice-amber-soft text-sice-amber dark:text-amber-200 border border-sice-amber/30">
-                Cambios pendientes
-              </span>
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                handleToggleTodas(totalHabilitados !== grupos.length)
-              }
-              disabled={guardandoCoeval}
-              title={
-                totalHabilitados === grupos.length
-                  ? 'Desmarcar todos los grupos'
-                  : 'Marcar todos los grupos para coevaluar'
-              }
-            >
-              {totalHabilitados === grupos.length
-                ? 'Desmarcar todas'
-                : 'Habilitar todas'}
-            </Button>
-
-            {hayCambiosCoeval && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleDescartarCambios}
-                disabled={guardandoCoeval}
-                title="Descartar cambios no guardados"
-              >
-                <UndoIcon className="w-4 h-4" /> Descartar
-              </Button>
-            )}
-
-            <Button
-              size="sm"
-              variant={hayCambiosCoeval ? 'primary' : 'outline'}
-              onClick={handleGuardarCoeval}
-              disabled={!hayCambiosCoeval || guardandoCoeval}
-              title="Guardar estado de coevaluación en la base de datos"
-            >
-              {guardandoCoeval ? (
-                <>
-                  <Spinner className="w-4 h-4" /> Guardando…
-                </>
-              ) : (
-                <>
-                  <SaveIcon className="w-4 h-4" /> Guardar cambios
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
+        <ControlCoevaluacion
+          totalGrupos={grupos.length}
+          totalHabilitados={totalHabilitados}
+          hayCambios={hayCambiosCoeval}
+          guardando={guardandoCoeval}
+          onToggleTodas={handleToggleTodas}
+          onDescartar={handleDescartarCambios}
+          onGuardar={handleGuardarCoeval}
+        />
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6 p-3.5 bg-surface rounded-DEFAULT border border-black/10 dark:border-white/10">
-        <div>
-          <p className="text-xs font-semibold text-ink-soft">
-            Autoevaluación del estudiante
-          </p>
-        </div>
-        <Button
-          size="sm"
-          variant={autoevaluacionHabilitada ? 'outline' : 'primary'}
-          onClick={cambiarAutoevaluacion}
-          disabled={guardandoAutoevaluacion}
-        >
-          {guardandoAutoevaluacion
-            ? 'Guardando…'
-            : autoevaluacionHabilitada
-              ? 'Cerrar autoevaluación'
-              : 'Habilitar autoevaluación'}
-        </Button>
-      </div>
+      <ControlAutoevaluacion
+        habilitada={autoevaluacionHabilitada}
+        guardando={guardandoAutoevaluacion}
+        onCambiar={cambiarAutoevaluacion}
+      />
 
       {grupos.length === 0 ? (
         <Aviso>
@@ -493,7 +413,7 @@ export default function Grupos() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
           {grupos.map(g => (
-            <CardGrupo
+            <GrupoCard
               key={g.id}
               grupo={g}
               mapaCalif={mapaCalif}
@@ -534,249 +454,6 @@ export default function Grupos() {
         </div>
       )}
 
-      {/* Barra flotante inferior cuando hay cambios sin guardar */}
-      {hayCambiosCoeval &&
-        createPortal(
-          <div className="md:hidden fixed inset-x-0 bottom-1 z-50 flex justify-center px-3 pointer-events-none">
-            <div className="pointer-events-auto bg-slate-900 text-white px-5 py-3 rounded-full shadow-2xl flex items-center gap-4 border border-white/10 animate-fade-in">
-              <span className="text-xs font-medium text-white/90">
-                Cambios sin guardar
-              </span>
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-white hover:bg-white/10 text-xs py-1 px-2.5"
-                  onClick={handleDescartarCambios}
-                  disabled={guardandoCoeval}
-                >
-                  Descartar
-                </Button>
-                <Button
-                  size="sm"
-                  variant="primary"
-                  className="text-xs py-1 px-3"
-                  onClick={handleGuardarCoeval}
-                  disabled={guardandoCoeval}
-                >
-                  {guardandoCoeval ? (
-                    <>
-                      <Spinner className="w-3.5 h-3.5" /> Guardando…
-                    </>
-                  ) : (
-                    <>
-                      <SaveIcon className="w-3.5 h-3.5" /> Guardar cambios
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-    </div>
-  )
-}
-
-function CardGrupo({
-  grupo,
-  mapaCalif,
-  mapaNotas,
-  onCalificar,
-  onVerAutoevaluacion,
-  onToggleCheck,
-  esModificado
-}) {
-  const [detalle, setDetalle] = useState(null)
-
-  return (
-    <div className="bg-white border border-black/[0.11] rounded-DEFAULT shadow-card p-5">
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <p className="text-[11px] font-bold text-sice-green dark:text-emerald-300">
-          Grupo {grupo.numero}
-        </p>
-
-        {/* Check para habilitar coevaluación */}
-        <label
-          className={`inline-flex items-center gap-2 cursor-pointer select-none text-xs font-semibold px-2.5 py-1 rounded-full border transition-all ${
-            grupo.coevaluacionHabilitada
-              ? 'bg-sice-green-soft text-sice-green border-sice-green/30 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-600/30 shadow-sm'
-              : 'bg-surface text-ink-soft border-black/10 dark:border-white/10 hover:border-black/25'
-          }`}
-          title={
-            grupo.coevaluacionHabilitada
-              ? 'Coevaluación habilitada para que los estudiantes evalúen a este grupo'
-              : 'Marcar para permitir que los estudiantes coevalúen a este grupo tras su exposición'
-          }
-        >
-          <input
-            type="checkbox"
-            checked={Boolean(grupo.coevaluacionHabilitada)}
-            onChange={e => onToggleCheck(grupo.id, e.target.checked)}
-            className="accent-sice-green w-3.5 h-3.5 rounded cursor-pointer"
-          />
-          <span>
-            {grupo.coevaluacionHabilitada
-              ? 'Coevaluación habilitada'
-              : 'Habilitar coevaluación'}
-          </span>
-          {esModificado && (
-            <span
-              className="w-2 h-2 rounded-full bg-sice-amber"
-              title="Cambio pendiente de guardar"
-            />
-          )}
-        </label>
-      </div>
-
-      <h2 className="text-base mb-4 leading-snug">{grupo.tema}</h2>
-
-      <ul className="flex flex-col gap-2">
-        {grupo.miembros.map(m => {
-          const calif = mapaCalif.get(m.usuarioId)
-          const nota = mapaNotas.get(m.usuarioId)
-          const coevaluado = nota?.coevaluado === true
-          const esEval = m.rolGrupo === 'evaluador'
-          const rolLabel = esEval ? 'Evaluador' : 'Expositor'
-          return (
-            <li
-              key={m.usuarioId}
-              className="flex flex-col gap-2 bg-surface rounded-sm px-3 py-2 sm:flex-row sm:flex-wrap sm:items-center"
-            >
-              <div className="min-w-0 w-full sm:flex-1 sm:min-w-[180px]">
-                <p className="text-sm font-semibold break-words leading-snug">
-                  {m.nombre}
-                </p>
-                <p
-                  className={`text-xs mt-0.5 ${esEval ? 'text-sice-green font-semibold dark:text-emerald-400' : 'text-ink-soft'}`}
-                >
-                  {rolLabel}
-                  {m.lider ? '  Líder' : ''}
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-1.5">
-                {calif ? (
-                  <Badge variant="ok">{calif.puntaje} pts</Badge>
-                ) : (
-                  <Badge variant="pending">Pendiente</Badge>
-                )}
-                {coevaluado && <Badge variant="info">Coevaluado</Badge>}
-              </div>
-
-              <div className="flex items-center gap-1.5 sm:ml-auto">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() =>
-                    setDetalle({
-                      nombre: m.nombre,
-                      nota,
-                      usuarioId: m.usuarioId,
-                      rolGrupo: m.rolGrupo
-                    })
-                  }
-                >
-                  Ver detalles
-                </Button>
-                <Button
-                  size="sm"
-                  variant={calif ? 'outline' : 'primary'}
-                  onClick={() => onCalificar(m.usuarioId, m.nombre, m.rolGrupo)}
-                >
-                  {calif ? (
-                    <>
-                      <EditIcon className="w-4 h-4" /> Editar
-                    </>
-                  ) : (
-                    'Calificar'
-                  )}
-                </Button>
-              </div>
-            </li>
-          )
-        })}
-      </ul>
-      {detalle &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4"
-            role="presentation"
-            onClick={() => setDetalle(null)}
-          >
-            <div
-              className="w-full max-w-md bg-white dark:bg-slate-800 border border-black/[0.11] dark:border-white/10 rounded-DEFAULT shadow-card p-5"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby={`detalles-${grupo.id}`}
-              onClick={e => e.stopPropagation()}
-            >
-              <div className="flex items-start justify-between gap-4 mb-4">
-                <div>
-                  <p className="text-xs font-bold text-sice-green dark:text-emerald-400">
-                    Grupo {grupo.numero}
-                  </p>
-                  <h3 id={`detalles-${grupo.id}`} className="text-lg">
-                    Detalles de {detalle.nombre}
-                  </h3>
-                </div>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setDetalle(null)}
-                  aria-label="Cerrar detalles"
-                >
-                  <CloseIcon style={{ width: '1.25rem', height: '1.25rem' }} />
-                </Button>
-              </div>
-              <div className="flex flex-col gap-2">
-                <DetalleNota
-                  label="Calificación docente (70%)"
-                  valor={detalle.nota?.docente * 0.7}
-                  ponderacion={70}
-                />
-                <DetalleNota
-                  label="Promedio coevaluación (30%)"
-                  valor={detalle.nota?.coevaluacion * 0.3}
-                  ponderacion={30}
-                />
-                <div className="pt-3 mt-2 border-t border-black/10 dark:border-white/15">
-                  <DetalleNota label="Nota final" valor={detalle.nota?.final} />
-                </div>
-                <div className="pt-3 mt-2">
-                  <DetalleNota label="Nota autoevaluación" valor={detalle.nota?.autoevaluacion} />
-                </div>
-                <Button
-                  className="w-full mt-2"
-                  variant="outline"
-                  onClick={() =>
-                    onVerAutoevaluacion(
-                      detalle.usuarioId,
-                      detalle.nombre,
-                      detalle.rolGrupo
-                    )
-                  }
-                >
-                  Ver autoevaluación
-                </Button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-    </div>
-  )
-}
-
-function DetalleNota({ label, valor, ponderacion = 100 }) {
-  return (
-    <div className="flex justify-between items-baseline gap-3 text-sm">
-      <span className="text-ink-soft">{label}</span>
-      <span className="font-bold">
-        {valor !== null && valor !== undefined
-          ? `${valor.toFixed(1)} / ${ponderacion}`
-          : 'Pendiente'}
-      </span>
     </div>
   )
 }

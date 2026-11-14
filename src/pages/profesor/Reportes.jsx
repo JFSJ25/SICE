@@ -6,12 +6,12 @@ import { obtenerRubrica, puntajeMaximo } from '../../lib/rubricas.js'
 import {
   Aviso,
   Button,
-  Eyebrow,
   LoadingSkeleton,
   Panel,
   Select,
   Spinner
 } from '../../components/ui/index.jsx'
+import CabeceraPagina from '../../components/shared/CabeceraPagina.jsx'
 import DownloadIcon from '@mui/icons-material/Download'
 import AssessmentIcon from '@mui/icons-material/Assessment'
 
@@ -140,13 +140,11 @@ export default function Reportes() {
 
   return (
     <div>
-      <div className="mb-7">
-        <Eyebrow>Exportación académica · {contexto?.etiqueta}</Eyebrow>
-        <h1>Reportes de notas finales</h1>
-        <p className="text-sm text-ink-soft mt-1">
-          Descarga un Excel con el detalle de cada estudiante y su nota final.
-        </p>
-      </div>
+      <CabeceraPagina
+        eyebrow={`Exportación académica · ${contexto?.etiqueta}`}
+        titulo="Reportes de notas finales"
+        descripcion="Descarga un Excel con el detalle de cada estudiante y su nota final."
+      />
 
       {error && <Aviso variant="red">{error}</Aviso>}
 

@@ -9,10 +9,8 @@ import {
   Button,
   LoadingSkeleton
 } from '../../components/ui/index.jsx'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import RateReviewIcon from '@mui/icons-material/RateReview'
-import LockIcon from '@mui/icons-material/Lock'
 import RefreshIcon from '@mui/icons-material/Refresh'
+import TarjetaCoevaluacion from '../../components/estudiante/TarjetaCoevaluacion.jsx'
 
 export default function Coevaluar() {
   const { perfil } = useAuth()
@@ -135,57 +133,24 @@ export default function Coevaluar() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
           {grupos.map((g, i) => {
             const hecho = estados[i]
-            const integrantes = g.miembros.map(m => m.nombre).join(', ')
             return (
-              <div
+              <TarjetaCoevaluacion
                 key={g.id}
-                className="bg-white border border-black/[0.11] rounded-DEFAULT shadow-card p-5"
-              >
-                <p className="text-[11px] font-bold text-sice-green dark:text-emerald-300 mb-1">
-                  Grupo {g.numero}
-                </p>
-                <h3 className="text-base mb-3 leading-snug">{g.tema}</h3>
-                <p className="text-xs text-ink-soft mb-1">
-                  <strong>Integrantes:</strong> {integrantes || '—'}
-                </p>
-                {hecho ? (
-                  <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-sice-green-soft text-sice-green dark:text-emerald-300">
-                    <CheckCircleIcon className="w-4 h-4" /> Ya coevaluado
-                  </span>
-                ) : !g.coevaluacionHabilitada ? (
-                  <div className="mt-3 pt-3 border-t border-black/5 dark:border-white/5 flex flex-col gap-1.5">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 text-ink-soft dark:bg-slate-800 dark:text-slate-300 w-fit">
-                      <LockIcon className="w-3.5 h-3.5 text-ink-soft" /> No
-                      disponible
-                    </span>
-                    <p className="text-[11px] text-ink-soft">
-                      El docente habilitará este grupo cuando finalice su
-                      exposición.
-                    </p>
-                  </div>
-                ) : (
-                  <Button
-                    className="w-full"
-                    onClick={() =>
-                      navigate(`/estudiante/coevaluar/${g.id}`, {
-                        state: {
-                          grupoNumero: g.numero,
-                          tema: g.tema,
-                          hemisemestreId: hemisemestreActivo.id,
-                          hemisemestreNombre: hemisemestreActivo.nombre,
-                          miembros: g.miembros,
-                          coevaluacionHabilitada: g.coevaluacionHabilitada
-                        }
-                      })
+                grupo={g}
+                realizada={hecho}
+                onCoevaluar={() =>
+                  navigate(`/estudiante/coevaluar/${g.id}`, {
+                    state: {
+                      grupoNumero: g.numero,
+                      tema: g.tema,
+                      hemisemestreId: hemisemestreActivo.id,
+                      hemisemestreNombre: hemisemestreActivo.nombre,
+                      miembros: g.miembros,
+                      coevaluacionHabilitada: g.coevaluacionHabilitada
                     }
-                  >
-                    <>
-                      <RateReviewIcon className="w-4 h-4" /> Coevaluar este
-                      grupo
-                    </>
-                  </Button>
-                )}
-              </div>
+                  })
+                }
+              />
             )
           })}
         </div>

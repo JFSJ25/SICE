@@ -1,4 +1,4 @@
-import { puntajeMaximo } from '../lib/rubricas.js'
+import { puntajeMaximo } from '../../lib/rubricas.js'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 
 function obtenerOpcionSeleccionadaId(seleccionadas, criterioId) {

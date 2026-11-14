@@ -31,13 +31,7 @@ export default function Login() {
   }
 
   return (
-    <div
-      className="min-h-screen relative flex items-center justify-center px-4 py-8"
-      style={{
-        background:
-          'radial-gradient(ellipse at 8% 12%, rgba(37,99,235,0.42) 0%, transparent 48%), radial-gradient(ellipse at 92% 88%, rgba(15,118,110,0.28) 0%, transparent 45%), #0B1930'
-      }}
-    >
+    <div className="min-h-screen relative flex items-center justify-center px-4 py-8 bg-gradient">
       <div className="absolute top-4 right-4">
         <ThemeToggle compact />
       </div>
@@ -80,7 +74,7 @@ export default function Login() {
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••"
+              // placeholder="••••••••"
               autoComplete="current-password"
               required
             />

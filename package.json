@@ -1,6 +1,6 @@
 {
   "name": "sice",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "private": true,
   "description": "Sistema de Registro y Calificación de Exposiciones — UTMACH",
   "engines": {

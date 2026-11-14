@@ -7,7 +7,7 @@ import {
   obtenerEstadoAutoevaluacion
 } from '../../lib/data.js'
 import { leerRespuestas, obtenerRubrica } from '../../lib/rubricas.js'
-import RubricaForm from '../../components/RubricaForm.jsx'
+import RubricaForm from '../../components/evaluacion/RubricaForm.jsx'
 import {
   Eyebrow,
   Panel,

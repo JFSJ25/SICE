@@ -2,14 +2,13 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { obtenerAutoevaluaciones } from '../../lib/data.js'
 import { obtenerRubrica, puntajeMaximo } from '../../lib/rubricas.js'
-import RubricaForm from '../../components/RubricaForm.jsx'
+import RubricaForm from '../../components/evaluacion/RubricaForm.jsx'
 import {
   Eyebrow,
   Aviso,
-  Panel,
   LoadingSkeleton
 } from '../../components/ui/index.jsx'
-import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import VolverLink from '../../components/shared/VolverLink.jsx'
 
 export default function Autoevaluacion() {
   const { state } = useLocation()
@@ -68,12 +67,7 @@ export default function Autoevaluacion() {
 
   return (
     <div>
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-1 text-sm text-sice-green dark:text-emerald-300 font-semibold hover:underline mb-4"
-      >
-        <ArrowBackIcon className="w-4 h-4" /> Volver
-      </button>
+      <VolverLink onClick={() => navigate(-1)} />
 
       <div className="mb-6">
         <Eyebrow>

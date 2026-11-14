@@ -5,7 +5,6 @@ import {
   obtenerPendientesDocente
 } from '../../lib/data.js'
 import {
-  Eyebrow,
   Aviso,
   Button,
   LoadingSkeleton,
@@ -14,6 +13,7 @@ import {
   CeldaTabla
 } from '../../components/ui/index.jsx'
 import { useRealtimeRefresh } from '../../lib/realtime.js'
+import CabeceraPagina from '../../components/shared/CabeceraPagina.jsx'
 
 export default function Pendientes() {
   const { contexto, hemisemestreActivo } = useOutletContext()
@@ -68,18 +68,15 @@ export default function Pendientes() {
 
   return (
     <div>
-      <div className="mb-7">
-        <Eyebrow>
-          {hemisemestreActivo?.nombre} · {contexto?.etiqueta}
-        </Eyebrow>
-        <h1>Pendientes</h1>
-        {pendientes.length > 0 && (
-          <p className="text-sm text-ink-soft mt-1">
-            {pendientes.length} estudiante{pendientes.length !== 1 ? 's' : ''}{' '}
-            sin calificar.
-          </p>
-        )}
-      </div>
+      <CabeceraPagina
+        eyebrow={`${hemisemestreActivo?.nombre} · ${contexto?.etiqueta}`}
+        titulo="Pendientes"
+        descripcion={
+          pendientes.length > 0
+            ? `${pendientes.length} estudiante${pendientes.length !== 1 ? 's' : ''} sin calificar.`
+            : ''
+        }
+      />
 
       {pendientes.length === 0 ? (
         <Aviso variant="green">

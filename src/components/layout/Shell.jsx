@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext.jsx'
+import { useAuth } from '../../context/AuthContext.jsx'
 import {
   cerrarSesion,
   obtenerContextosProfesor,
   obtenerContextoEstudiante
-} from '../lib/auth.js'
-import { obtenerHemisemestres } from '../lib/data.js'
+} from '../../lib/auth.js'
+import { obtenerHemisemestres } from '../../lib/data.js'
 import MenuIcon from '@mui/icons-material/Menu'
 import CloseIcon from '@mui/icons-material/Close'
 import GroupIcon from '@mui/icons-material/Group'
@@ -21,7 +21,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import LogoutIcon from '@mui/icons-material/Logout'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
-import { LoadingSkeleton, ThemeToggle } from './ui/index.jsx'
+import { LoadingSkeleton, ThemeToggle } from '../ui/index.jsx'
 
 // El Shell expone el contexto activo y el hemisemestre activo
 // a las páginas hijas a través de props pasadas por Outlet context.

@@ -7,7 +7,7 @@ import {
   leerRespuestas
 } from '../../lib/rubricas.js'
 import { guardarCoevaluacion, obtenerEstadoCoevaluacionGrupo } from '../../lib/data.js'
-import RubricaForm from '../../components/RubricaForm.jsx'
+import RubricaForm from '../../components/evaluacion/RubricaForm.jsx'
 import {
   Eyebrow,
   Aviso,

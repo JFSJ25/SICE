@@ -1,14 +1,21 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
 import { LoadingSkeleton } from './components/ui/index.jsx'
+import ScrollToTop from './components/shared/ScrollToTop.jsx'
 
 import Login from './pages/Login.jsx'
-import Shell from './components/Shell.jsx'
+import Shell from './components/layout/Shell.jsx'
+import Cuenta from './pages/Cuenta.jsx'
+import AcercaDe from './pages/AcercaDe.jsx'
+import NotFound from './pages/NotFound.jsx'
 
 // Páginas del profesor
 import Grupos from './pages/profesor/Grupos.jsx'
-import Pendientes from './pages/profesor/Pendientes.jsx'
 import Calificar from './pages/profesor/Calificar.jsx'
+import Autoevaluacion from './pages/profesor/Autoevaluacion.jsx'
+import Pendientes from './pages/profesor/Pendientes.jsx'
+import Estudiantes from './pages/profesor/Estudiantes.jsx'
+import Reportes from './pages/profesor/Reportes.jsx'
 import Admin from './pages/profesor/Admin/index.jsx'
 
 // Páginas del estudiante
@@ -17,11 +24,6 @@ import Coevaluar from './pages/estudiante/Coevaluar.jsx'
 import CoevaluarForm from './pages/estudiante/CoevaluarForm.jsx'
 import Notas from './pages/estudiante/Notas.jsx'
 import Autoevaluar from './pages/estudiante/Autoevaluar.jsx'
-import Cuenta from './pages/Cuenta.jsx'
-import Estudiantes from './pages/profesor/Estudiantes.jsx'
-import Reportes from './pages/profesor/Reportes.jsx'
-import Autoevaluacion from './pages/profesor/Autoevaluacion.jsx'
-import AcercaDe from './pages/AcercaDe.jsx'
 
 import './App.css'
 
@@ -88,12 +90,12 @@ function RootRedirect() {
   return <Navigate to="/estudiante/mi-grupo" replace />
 }
 
-// ---- App ----
-
 export default function App() {
   return (
     <AuthProvider>
       <HashRouter>
+        {/* Scroll to top al cambiar de ruta */}
+        <ScrollToTop />
         <Routes>
           <Route path="/login" element={<Login />} />
 
@@ -219,7 +221,10 @@ export default function App() {
             />
           </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* <Route path="*" element={<Navigate to="/" replace />} /> */}
+
+          {/* Página 404 */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </HashRouter>
     </AuthProvider>

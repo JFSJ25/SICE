@@ -6,7 +6,8 @@ import {
   obtenerPromedioCoeval
 } from '../../lib/data.js'
 import { obtenerRubrica, puntajeMaximo } from '../../lib/rubricas.js'
-import RubricaForm from '../../components/RubricaForm.jsx'
+import RubricaForm from '../../components/evaluacion/RubricaForm.jsx'
+import DetalleCalificacion from '../../components/shared/DetalleCalificacion.jsx'
 import {
   Eyebrow,
   Panel,
@@ -194,10 +195,12 @@ export default function Notas() {
                 </p>
               ) : (
                 <>
-                  <FilaDesglose
+                  <DetalleCalificacion
                     label="Calificación del docente (70 %)"
                     valor={docPonderado}
-                    maximo={70}
+                    ponderacion={70}
+                    className="py-2.5 border-b border-black/[0.07]"
+                    textoPendiente="— pendiente"
                   />
 
                   {comentario && (
@@ -278,10 +281,12 @@ export default function Notas() {
                     </div>
                   )}
 
-                  <FilaDesglose
+                  <DetalleCalificacion
                     label="Promedio de coevaluación (30 %)"
                     valor={coevPonderado}
-                    maximo={30}
+                    ponderacion={30}
+                    className="py-2.5 border-b border-black/[0.07]"
+                    // textoPendiente="— pendiente"
                   />
 
                   <div className="mt-3 pt-3 border-black/10 flex justify-between items-baseline">
@@ -310,17 +315,6 @@ export default function Notas() {
           )
         }
       )}
-    </div>
-  )
-}
-
-function FilaDesglose({ label, valor, maximo }) {
-  return (
-    <div className="flex justify-between items-baseline py-2.5 border-b border-black/[0.07] gap-3">
-      <span className="text-sm text-ink-soft">{label}</span>
-      <span className="text-sm font-bold">
-        {valor !== null ? `${valor.toFixed(1)} / ${maximo}` : '— pendiente'}
-      </span>
     </div>
   )
 }

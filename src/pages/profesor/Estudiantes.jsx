@@ -7,16 +7,15 @@ import {
   Aviso,
   Button,
   Campo,
-  Eyebrow,
   Input,
   // LoadingSkeleton,
   Panel,
   Spinner
 } from '../../components/ui/index.jsx'
+import CabeceraPagina from '../../components/shared/CabeceraPagina.jsx'
+import ResultadoPassword from '../../components/profesor/ResultadoPassword.jsx'
 import SearchIcon from '@mui/icons-material/Search'
 import LockResetIcon from '@mui/icons-material/LockReset'
-import ContentCopyIcon from '@mui/icons-material/ContentCopy'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 
 export default function Estudiantes() {
   const [busqueda, setBusqueda] = useState('')
@@ -74,46 +73,20 @@ export default function Estudiantes() {
 
   return (
     <div>
-      <div className="mb-7">
-        <Eyebrow>Administración</Eyebrow>
-        <h1>Contraseñas de estudiantes</h1>
-        <p className="text-sm text-ink-soft mt-1">
-          Restablece el acceso de un estudiante que olvidó su contraseña.
-        </p>
-      </div>
+      <CabeceraPagina
+        eyebrow="Administración"
+        titulo="Contraseñas de estudiantes"
+        descripcion="Restablece el acceso de un estudiante que olvidó su contraseña."
+      />
 
       {error && <Aviso variant="red">{error}</Aviso>}
 
       {resultado && (
-        <Aviso variant="green">
-          <div className="flex items-start gap-2">
-            <CheckCircleIcon className="w-5 h-5 flex-shrink-0" />
-            <div className="min-w-0">
-              <p className="font-semibold">
-                Contraseña temporal creada para{' '}
-                {resultado.estudiante.nombre_completo}.
-              </p>
-              <p className="text-xs mt-1">
-                Entrégala al estudiante. Solo se mostrará mientras esta pantalla
-                permanezca abierta.
-              </p>
-              <div className="flex flex-wrap items-center gap-2 mt-3">
-                <code className="bg-white/70 border dark:bg-sidebar border-sice-green/20 rounded-sm px-3 py-2 font-mono text-sm font-bold tracking-wide">
-                  {resultado.password_temporal}
-                </code>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={copiarPassword}
-                >
-                  <ContentCopyIcon className="w-4 h-4" />
-                  {copiado ? 'Copiada' : 'Copiar'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Aviso>
+        <ResultadoPassword
+          resultado={resultado}
+          copiada={copiado}
+          onCopiar={copiarPassword}
+        />
       )}
 
       <Panel>

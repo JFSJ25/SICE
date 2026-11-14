@@ -10,13 +10,10 @@ import {
   Panel,
   Aviso,
   Badge,
-  Button,
-  Select,
-  Spinner,
   LoadingSkeleton
 } from '../../components/ui/index.jsx'
-import RefreshIcon from '@mui/icons-material/Refresh'
 import { useRealtimeRefresh } from '../../lib/realtime.js'
+import TarjetaAsignacionGrupo from '../../components/estudiante/TarjetaAsignacionGrupo.jsx'
 
 export default function MiGrupo() {
   const { perfil } = useAuth()
@@ -206,79 +203,16 @@ export default function MiGrupo() {
             m => m.usuarioId === perfil?.id
           )
           return (
-            <Panel key={grupo.id}>
-              <p className="text-[11px] font-bold text-sice-green dark:text-emerald-300 mb-1">
-                Grupo {grupo.numero}
-              </p>
-              <h3 className="text-base mb-3 leading-snug">{grupo.tema}</h3>
-              <ul className="flex flex-col gap-1.5 mb-4">
-                {grupo.miembros.map(m => (
-                  <li
-                    key={m.usuarioId}
-                    className="flex items-center gap-2 bg-surface rounded-sm px-3 py-2"
-                  >
-                    <span className="flex-1 text-sm">{m.nombre}</span>
-                    <Badge variant={m.rolGrupo === 'evaluador' ? 'ok' : 'info'}>
-                      {m.rolGrupo === 'evaluador' ? 'Evaluador' : 'Expositor'}
-                    </Badge>
-                    {m.lider && <Badge variant="pending">Líder</Badge>}
-                  </li>
-                ))}
-                {grupo.miembros.length === 0 && (
-                  <li className="text-sm text-ink-soft">
-                    Aún no hay integrantes.
-                  </li>
-                )}
-              </ul>
-              {abierta && (
-                <div className="border-t border-black/10 pt-3">
-                  {soyMiembro && (
-                    <p className="text-xs text-ink-soft mb-2">
-                      Puedes modificar tu rol o cambiarte a otro grupo.
-                    </p>
-                  )}
-                  <div className="flex flex-wrap items-end gap-2">
-                    <label className="text-xs text-ink-soft">
-                      <span className="block mb-1">Tu rol</span>
-                      <Select
-                        value={borrador.rol}
-                        onChange={e =>
-                          actualizarBorrador(grupo.id, { rol: e.target.value })
-                        }
-                        className="text-xs"
-                      >
-                        <option value="expositor">Expositor</option>
-                        <option value="evaluador">Evaluador</option>
-                      </Select>
-                    </label>
-                    <label className="flex items-center gap-1 text-xs text-ink-mid pb-2">
-                      <input
-                        type="checkbox"
-                        checked={borrador.lider}
-                        onChange={e =>
-                          actualizarBorrador(grupo.id, {
-                            lider: e.target.checked
-                          })
-                        }
-                        className="accent-gold"
-                      />
-                      Ser líder
-                    </label>
-                    <Button
-                      size="sm"
-                      onClick={() => guardarAsignacion(grupo.id)}
-                      disabled={grupoGuardandoId !== null}
-                    >
-                      {grupoGuardandoId === grupo.id
-                        ? 'Guardando…'
-                        : soyMiembro
-                          ? 'Guardar cambios'
-                          : 'Unirme a este grupo'}
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </Panel>
+            <TarjetaAsignacionGrupo
+              key={grupo.id}
+              grupo={grupo}
+              borrador={borrador}
+              abierta={abierta}
+              soyMiembro={soyMiembro}
+              guardando={grupoGuardandoId !== null}
+              onActualizar={cambios => actualizarBorrador(grupo.id, cambios)}
+              onGuardar={() => guardarAsignacion(grupo.id)}
+            />
           )
         })}
       </div>

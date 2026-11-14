@@ -38,6 +38,36 @@
     background: linear-gradient(135deg, #0b1424 0%, #101d32 52%, #14243b 100%);
   }
 
+  .bg-gradient {
+    background:
+      radial-gradient(
+        ellipse at 8% 12%,
+        rgba(238, 174, 202, 1) 0%,
+        transparent 48%
+      ),
+      radial-gradient(
+        ellipse at 92% 88%,
+        rgba(148, 187, 233, 1) 100%,
+        transparent 45%
+      ),
+      #f1f5f9;
+  }
+
+  .dark .bg-gradient {
+    background:
+      radial-gradient(
+        ellipse at 8% 12%,
+        rgba(37, 99, 235, 0.42) 0%,
+        transparent 48%
+      ),
+      radial-gradient(
+        ellipse at 92% 88%,
+        rgba(15, 118, 110, 0.28) 0%,
+        transparent 45%
+      ),
+      #0b1930;
+  }
+
   button,
   input,
   select,

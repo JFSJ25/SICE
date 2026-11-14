@@ -4,7 +4,7 @@ import { useAuth } from '../../../context/AuthContext.jsx'
 import StepParalelo from './StepParalelo.jsx'
 import StepEstudiantes from './StepEstudiantes.jsx'
 import StepGrupos from './StepGrupos.jsx'
-import CheckIcon from '@mui/icons-material/Check'
+import IndicadorPasos from '../../../components/shared/IndicadorPasos.jsx'
 
 const PASOS = ['Paralelo', 'Estudiantes', 'Grupos']
 const CLAVE_PASO_ADMIN = 'sice-paso-admin'
@@ -76,48 +76,12 @@ export default function Admin() {
         </p>
       </div>
 
-      {/* Indicador de pasos */}
-      <div className="flex flex-wrap items-center gap-y-2 mb-8">
-        {PASOS.map((nombre, i) => (
-          <div key={i} className="flex items-center">
-            <button
-              type="button"
-              onClick={() => irAlPaso(i)}
-              disabled={i > 0 && !paraleloId}
-              className={`
-              flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold border-2 transition-colors
-              ${
-                i < pasoActual
-                  ? 'bg-sice-green dark:bg-emerald-500 border-sice-green dark:border-emerald-500 text-white'
-                  : i === pasoActual
-                    ? 'bg-gold border-gold text-white'
-                    : 'bg-surface dark:bg-slate-800 border-black/20 dark:border-white/20 text-ink-soft'
-              }
-                  ${i > 0 && !paraleloId ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
-            `}
-            >
-              {i < pasoActual ? <CheckIcon className="w-4 h-4" /> : i + 1}
-            </button>
-            <span
-              onClick={() => irAlPaso(i)}
-              className={`
-                  ml-2 text-sm font-medium cursor-pointer
-              ${i === pasoActual ? 'text-ink' : 'text-ink-soft'}
-            `}
-            >
-              {nombre}
-            </span>
-            {i < PASOS.length - 1 && (
-              <div
-                className={`
-                mx-2 md:mx-4 h-px w-6 md:w-16
-                ${i < pasoActual ? 'bg-sice-green dark:bg-emerald-500' : 'bg-black/15 dark:bg-white/20'}
-              `}
-              />
-            )}
-          </div>
-        ))}
-      </div>
+      <IndicadorPasos
+        pasos={PASOS}
+        pasoActual={pasoActual}
+        puedeNavegar={indice => indice === 0 || Boolean(paraleloId)}
+        onSeleccionar={irAlPaso}
+      />
 
       {/* Paso actual */}
       {pasoActual === 0 && (

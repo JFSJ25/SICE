@@ -10,7 +10,7 @@ import {
   obtenerCalificacionDocente,
   guardarCalificacionDocente
 } from '../../lib/data.js'
-import RubricaForm, { calcularPuntaje } from '../../components/RubricaForm.jsx'
+import RubricaForm, { calcularPuntaje } from '../../components/evaluacion/RubricaForm.jsx'
 import {
   Eyebrow,
   Aviso,
@@ -20,8 +20,8 @@ import {
   Spinner,
   LoadingSkeleton
 } from '../../components/ui/index.jsx'
-import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import SaveIcon from '@mui/icons-material/Save'
+import VolverLink from '../../components/shared/VolverLink.jsx'
 
 export default function Calificar() {
   const { estudianteId } = useParams()
@@ -133,14 +133,7 @@ export default function Calificar() {
   return (
     <div>
       {/* Breadcrumb */}
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-1 text-sm text-sice-green dark:text-emerald-300 font-semibold hover:underline mb-4"
-      >
-        <>
-          <ArrowBackIcon className="w-4 h-4" /> Volver
-        </>
-      </button>
+      <VolverLink onClick={() => navigate(-1)} />
 
       {/* Encabezado */}
       <div className="mb-6">
