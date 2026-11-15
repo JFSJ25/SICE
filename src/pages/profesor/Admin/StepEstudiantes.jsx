@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../../../lib/supabase.js'
 import {
   matricularEstudiantes,
@@ -16,6 +16,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import DownloadIcon from '@mui/icons-material/Download'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import { notificar } from '../../../lib/notifications.js'
+import ZonaArchivo from '../../../components/shared/ZonaArchivo.jsx'
 
 function normalizarCuentas(data) {
   const filas = Array.isArray(data)
@@ -199,12 +200,14 @@ export default function StepEstudiantes({
             Pérez López Ana,aperez@utmach.edu.ec
           </div>
 
-          <input
+          <ZonaArchivo
             key={paraleloId}
-            type="file"
-            accept=".xls,.xlsx,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
-            onChange={e => seleccionarArchivo(e.target.files[0] ?? null)}
-            className="text-sm text-ink-soft file:mr-3 file:py-1.5 file:px-3 file:rounded-sm file:border file:border-black/20 file:text-xs file:font-semibold file:bg-white hover:file:bg-surface"
+            archivo={archivo}
+            onArchivo={seleccionarArchivo}
+            onRechazado={mensaje => {
+              setError(mensaje)
+              notificar.aviso(mensaje)
+            }}
           />
 
           {archivo && importacion && (
