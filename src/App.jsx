@@ -1,7 +1,7 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
 import { LoadingSkeleton } from './components/ui/index.jsx'
-import ScrollToTop from './components/shared/ScrollToTop.jsx'
+import ScrollToTop from './components/ui/ScrollToTop.jsx'
 import { NotificacionesToast } from './components/ui/Notificaciones.jsx'
 
 import Login from './pages/Login.jsx'
@@ -96,7 +96,6 @@ export default function App() {
     <AuthProvider>
       <HashRouter>
         <NotificacionesToast />
-        {/* Scroll to top al cambiar de ruta */}
         <ScrollToTop />
         <Routes>
           <Route path="/login" element={<Login />} />

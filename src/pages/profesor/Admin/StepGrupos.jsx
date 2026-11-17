@@ -173,7 +173,12 @@ export default function StepGrupos({
     }
   }
 
-  if (cargando) return <LoadingSkeleton variant="admin-grupos" />
+  // if (cargando) return <LoadingSkeleton variant="admin-grupos" />
+    if (cargando) return (
+    <div className="flex items-center justify-center gap-2 h-64 text-sm text-ink-soft">
+      <Spinner className="w-4 h-4" /> Cargando…
+    </div>
+  )
 
   return (
     <div className="flex flex-col gap-4">

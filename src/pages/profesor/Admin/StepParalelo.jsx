@@ -245,7 +245,12 @@ export default function StepParalelo({
       })
   }
 
-  if (cargando) return <LoadingSkeleton variant="admin-paralelo" />
+  // if (cargando) return <LoadingSkeleton variant="admin-paralelo" />
+  if (cargando) return (
+    <div className="flex items-center justify-center gap-2 h-64 text-sm text-ink-soft">
+      <Spinner className="w-4 h-4" /> Cargando…
+    </div>
+  )
 
   return (
     <Panel>
