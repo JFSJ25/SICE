@@ -10,6 +10,8 @@ import {
   ThemeToggle
 } from '../components/ui/index.jsx'
 import LoginIcon from '@mui/icons-material/Login'
+import VisibilityIcon from '@mui/icons-material/Visibility'
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -17,6 +19,7 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [cargando, setCargando] = useState(false)
+  const [mostrarPassword, setMostrarPassword] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -73,14 +76,34 @@ export default function Login() {
           </Campo>
 
           <Campo label="Contraseña">
-            <Input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              // placeholder="••••••••"
-              autoComplete="current-password"
-              required
-            />
+            <div className="relative">
+              <Input
+                type={mostrarPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Ingresa tu contraseña"
+                autoComplete="current-password"
+                className="pr-12"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setMostrarPassword(valor => !valor)}
+                aria-label={
+                  mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'
+                }
+                title={
+                  mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'
+                }
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 h-9 w-9 p-0 inline-flex items-center justify-center rounded-sm border border-transparent bg-transparent"
+              >
+                {mostrarPassword ? (
+                  <VisibilityOffIcon className="w-5 h-5" />
+                ) : (
+                  <VisibilityIcon className="w-5 h-5" />
+                )}
+              </button>
+            </div>
           </Campo>
 
           <Button type="submit" className="w-full mt-2" disabled={cargando}>
