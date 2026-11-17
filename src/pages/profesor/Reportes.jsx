@@ -26,14 +26,17 @@ export default function Reportes() {
   const { contexto, hemisemestres } = useOutletContext()
   const [tipo, setTipo] = useState('ambos')
   const [procesando, setProcesando] = useState(false)
+  const [tipoProcesamiento, setTipoProcesamiento] = useState(null)
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState('')
+  const [advertencia, setAdvertencia] = useState('')
 
   useEffect(() => {
     setError('')
+    setAdvertencia('')
   }, [contexto?.paraleloId])
 
-  async function generarReporte() {
+  async function generarReporte(forzado = false) {
     if (!contexto || hemisemestres.length < 2) {
       const mensaje = 'No hay un paralelo con sus dos hemisemestres disponibles.'
       setError(mensaje)
@@ -42,7 +45,9 @@ export default function Reportes() {
     }
 
     setProcesando(true)
+    setTipoProcesamiento(forzado ? 'forzado' : 'normal')
     setError('')
+    setAdvertencia('')
     try {
       const seleccionados = TIPOS_REPORTE[tipo]
       const rubricas = await cargarRubricas()
@@ -77,7 +82,7 @@ export default function Reportes() {
           : []
       })
 
-      if (pendientes.length > 0) {
+      if (pendientes.length > 0 && !forzado) {
         const mensaje = `No se puede generar el reporte porque aún no está completo: ${pendientes.join(
           '. '
         )}.`
@@ -107,13 +112,22 @@ export default function Reportes() {
         nombrePeriodo: contexto.periodoNombre,
         nombresHemisemestres: nombres
       })
-      notificar.exito('Reporte generado y descargado correctamente.')
+      if (forzado && pendientes.length > 0) {
+        const mensaje = `Reporte generado con notas incompletas: ${pendientes.join(
+          '. '
+        )}. Las notas pendientes aparecerán como "Pendiente".`
+        setAdvertencia(mensaje)
+        // notificar.aviso(mensaje)
+      } else {
+        notificar.exito('Reporte generado y descargado correctamente.')
+      }
     } catch (e) {
       const mensaje = e.message ?? 'No se pudo generar el reporte.'
       setError(mensaje)
       notificar.error(mensaje)
     } finally {
       setProcesando(false)
+      setTipoProcesamiento(null)
     }
   }
 
@@ -153,14 +167,15 @@ export default function Reportes() {
       />
 
       {error && <Aviso variant="red">{error}</Aviso>}
+      {advertencia && <Aviso variant="amber">{advertencia}</Aviso>}
 
       <Panel>
         <div className="flex flex-col gap-5">
           <div>
             <h2 className="text-lg">Selecciona el reporte</h2>
             <p className="text-sm text-ink-soft mt-1">
-              Solo se podrá descargar cuando estén completas las calificaciones
-              docentes y las coevaluaciones requeridas.
+              La generación normal exige calificaciones docentes y coevaluaciones completas.
+              La generación forzada permite descargar el reporte con datos pendientes.
             </p>
           </div>
           <label className="flex flex-col gap-1.5 text-xs font-semibold text-ink-mid max-w-md">
@@ -171,21 +186,39 @@ export default function Reportes() {
               <option value="ambos">Notas de ambos hemisemestres</option>
             </Select>
           </label>
-          <Button
-            onClick={generarReporte}
-            disabled={procesando || !contexto}
-            className="w-full sm:w-auto sm:self-start"
-          >
-            {procesando ? (
-              <>
-                <Spinner className="w-4 h-4" /> Verificando notas…
-              </>
-            ) : (
-              <>
-                <DownloadIcon className="w-4 h-4" /> Generar Excel
-              </>
-            )}
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2 sm:self-start">
+            <Button
+              onClick={() => generarReporte(false)}
+              disabled={procesando || !contexto}
+              className="w-full sm:w-auto"
+            >
+              {procesando && tipoProcesamiento === 'normal' ? (
+                <>
+                  <Spinner className="w-4 h-4" /> Generando…
+                </>
+              ) : (
+                <>
+                  <DownloadIcon className="w-4 h-4" /> Generar reporte
+                </>
+              )}
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => generarReporte(true)}
+              disabled={procesando || !contexto}
+              className="w-full sm:w-auto"
+            >
+              {procesando && tipoProcesamiento === 'forzado' ? (
+                <>
+                  <Spinner className="w-4 h-4" /> Generando…
+                </>
+              ) : (
+                <>
+                  <DownloadIcon className="w-4 h-4" /> Generar reporte forzado
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </Panel>
 
