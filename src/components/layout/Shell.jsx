@@ -142,6 +142,11 @@ export default function Shell() {
       to: '/profesor/reportes',
       label: 'Reportes de notas',
       Icon: AssessmentIcon
+    },
+    {
+      to: '/profesor/coevaluaciones',
+      label: 'Seguimiento coevaluaciones',
+      Icon: FactCheckIcon
     }
   ]
   const navEstudiante = [

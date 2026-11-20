@@ -470,44 +470,44 @@ export function ReportesSkeleton() {
 /**
  * Skeleton para el directorio de estudiantes
  */
-// export function EstudiantesSkeleton() {
-//   return (
-//     <div className="w-full space-y-6" aria-label="Cargando directorio de estudiantes">
-//       <PageHeaderSkeleton hasButton={false} hasEyebrow />
+export function EstudiantesSkeleton() {
+  return (
+    <div className="w-full space-y-6" aria-label="Cargando directorio de estudiantes">
+      <PageHeaderSkeleton hasButton={false} hasEyebrow />
 
-//       {/* Buscador */}
-//       <div className="bg-white dark:bg-slate-800 border border-blue-900/[0.09] dark:border-white/10 rounded-DEFAULT shadow-card p-4 flex gap-3">
-//         <Skeleton className="flex-1" height="2.5rem" borderRadius="6px" />
-//         <Skeleton width="6rem" height="2.5rem" borderRadius="6px" />
-//       </div>
+      {/* Buscador */}
+      <div className="bg-white dark:bg-slate-800 border border-blue-900/[0.09] dark:border-white/10 rounded-DEFAULT shadow-card p-4 flex gap-3">
+        <Skeleton className="flex-1" height="2.5rem" borderRadius="6px" />
+        <Skeleton width="6rem" height="2.5rem" borderRadius="6px" />
+      </div>
 
-//       {/* Panel de lista */}
-//       <div className="bg-white dark:bg-slate-800 border border-blue-900/[0.09] dark:border-white/10 rounded-DEFAULT shadow-card overflow-hidden">
-//         <div className="px-5 py-4 border-b border-black/[0.07] dark:border-white/10 flex items-center justify-between">
-//           <Skeleton width="8rem" height="1.25rem" borderRadius="4px" />
-//           <Skeleton width="5rem" height="0.875rem" borderRadius="9999px" />
-//         </div>
-//         <div className="divide-y divide-black/[0.07] dark:divide-white/10">
-//           {[1, 2, 3, 4, 5].map(i => (
-//             <div
-//               key={i}
-//               className="px-5 py-4 flex items-center justify-between gap-4"
-//             >
-//               <div className="flex items-center gap-3">
-//                 <Skeleton circle width="2rem" height="2rem" />
-//                 <div className="space-y-1">
-//                   <Skeleton width="11rem" height="0.95rem" borderRadius="4px" />
-//                   <Skeleton width="8rem" height="0.75rem" borderRadius="4px" />
-//                 </div>
-//               </div>
-//               <Skeleton width="6.5rem" height="2rem" borderRadius="6px" />
-//             </div>
-//           ))}
-//         </div>
-//       </div>
-//     </div>
-//   )
-// }
+      {/* Panel de lista */}
+      <div className="bg-white dark:bg-slate-800 border border-blue-900/[0.09] dark:border-white/10 rounded-DEFAULT shadow-card overflow-hidden">
+        <div className="px-5 py-4 border-b border-black/[0.07] dark:border-white/10 flex items-center justify-between">
+          <Skeleton width="8rem" height="1.25rem" borderRadius="4px" />
+          <Skeleton width="5rem" height="0.875rem" borderRadius="9999px" />
+        </div>
+        <div className="divide-y divide-black/[0.07] dark:divide-white/10">
+          {[1, 2, 3, 4, 5].map(i => (
+            <div
+              key={i}
+              className="px-5 py-4 flex items-center justify-between gap-4"
+            >
+              <div className="flex items-center gap-3">
+                <Skeleton circle width="2rem" height="2rem" />
+                <div className="space-y-1">
+                  <Skeleton width="11rem" height="0.95rem" borderRadius="4px" />
+                  <Skeleton width="8rem" height="0.75rem" borderRadius="4px" />
+                </div>
+              </div>
+              <Skeleton width="6.5rem" height="2rem" borderRadius="6px" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 /**
  * Skeleton para los pasos de Administración

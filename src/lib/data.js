@@ -966,6 +966,105 @@ export async function obtenerReporteNotasHemisemestre(
 
 // ---- Coevaluaciones ----
 
+export async function obtenerResumenCoevaluacionEstudiantes(
+  paraleloId,
+  hemisemestreId
+) {
+  const [grupos, matriculas] = await Promise.all([
+    obtenerGruposConDetalle(paraleloId, hemisemestreId),
+    supabase
+      .from('matriculas')
+      .select(
+        'usuario_id, usuarios!matriculas_usuario_id_fkey(nombre_completo, email)'
+      )
+      .eq('paralelo_id', paraleloId)
+      .then(({ data, error }) => {
+        if (error) throw error
+        return data ?? []
+      })
+  ])
+
+  const grupoPorEstudiante = new Map()
+  grupos.forEach(grupo => {
+    grupo.miembros.forEach(miembro => {
+      grupoPorEstudiante.set(miembro.usuarioId, grupo)
+    })
+  })
+
+  const estudiantesPorId = new Map()
+  matriculas.forEach(matricula => {
+    estudiantesPorId.set(matricula.usuario_id, {
+      usuarioId: matricula.usuario_id,
+      nombre: matricula.usuarios?.nombre_completo ?? '(sin nombre)',
+      email: matricula.usuarios?.email ?? ''
+    })
+  })
+  grupos.forEach(grupo => {
+    grupo.miembros.forEach(miembro => {
+      estudiantesPorId.set(miembro.usuarioId, {
+        usuarioId: miembro.usuarioId,
+        nombre: miembro.nombre,
+        email: estudiantesPorId.get(miembro.usuarioId)?.email ?? ''
+      })
+    })
+  })
+
+  const evaluadorIds = [...estudiantesPorId.keys()]
+  let coevaluaciones = []
+  if (evaluadorIds.length > 0) {
+    const { data, error } = await supabase
+      .from('coevaluaciones')
+      .select(
+        'evaluador_id, grupo_evaluado_id, estudiante_evaluado_id'
+      )
+      .eq('hemisemestre_id', hemisemestreId)
+      .in('evaluador_id', evaluadorIds)
+    if (error) throw error
+    coevaluaciones = data ?? []
+  }
+
+  const evaluadosPorPar = new Set(
+    coevaluaciones.map(c =>
+      `${c.evaluador_id}|${c.grupo_evaluado_id}|${c.estudiante_evaluado_id}`
+    )
+  )
+  const gruposActivos = grupos.filter(grupo => grupo.coevaluacionHabilitada)
+
+  return [...estudiantesPorId.values()]
+    .map(estudiante => {
+      const grupoPropio = grupoPorEstudiante.get(estudiante.usuarioId)
+      const gruposPendientes =
+        gruposActivos.filter(grupo => grupo.id !== grupoPropio?.id)
+      const detalleGrupos = gruposPendientes.map(grupo => {
+        const integrantes = grupo.miembros.map(miembro => miembro.usuarioId)
+        const coevaluado =
+          integrantes.length > 0 &&
+          integrantes.every(usuarioId =>
+            evaluadosPorPar.has(
+              `${estudiante.usuarioId}|${grupo.id}|${usuarioId}`
+            )
+          )
+        return {
+          grupoId: grupo.id,
+          numero: grupo.numero,
+          tema: grupo.tema,
+          coevaluado
+        }
+      })
+      const pendientes = detalleGrupos.filter(grupo => !grupo.coevaluado)
+      return {
+        ...estudiante,
+        grupoNumero: grupoPropio?.numero ?? null,
+        grupoId: grupoPropio?.id ?? null,
+        gruposActivos: detalleGrupos,
+        gruposEvaluados: detalleGrupos.filter(grupo => grupo.coevaluado),
+        gruposPendientes: pendientes,
+        terminado: pendientes.length === 0
+      }
+    })
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+}
+
 export async function yaCoevaluoGrupo(
   evaluadorId,
   grupoId,

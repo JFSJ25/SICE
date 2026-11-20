@@ -27,7 +27,8 @@ export function Button({
       'bg-transparent border border-ink/20 text-ink hover:border-gold/60 hover:bg-gold-soft/40',
     ghost:
       'bg-transparent border-transparent text-ink-mid hover:bg-gold-soft/60 hover:text-ink',
-    danger: 'bg-sice-red text-white border border-black/5 hover:brightness-110'
+    danger: 'bg-sice-red text-white border border-black/5 hover:brightness-110',
+    custom: ''
   }
   const sizes = {
     sm: 'text-xs px-3 py-1.5 tracking-wide',
@@ -163,18 +164,28 @@ export function Tabla({ headers, children }) {
   )
 }
 
-export function FilaTabla({ children, className = '' }) {
+export function FilaTabla({
+  children,
+  className = '',
+  hover = true,
+  ...props
+}) {
   return (
     <tr
-      className={`border-b border-black/[0.07] last:border-0 hover:bg-surface ${className}`}
+      className={`border-b border-black/[0.07] last:border-0 ${hover ? 'hover:bg-surface' : ''} ${className}`}
+      {...props}
     >
       {children}
     </tr>
   )
 }
 
-export function CeldaTabla({ children, className = '' }) {
-  return <td className={`px-4 py-3 ${className}`}>{children}</td>
+export function CeldaTabla({ children, className = '', ...props }) {
+  return (
+    <td className={`px-4 py-3 ${className}`} {...props}>
+      {children}
+    </td>
+  )
 }
 
 // Input y Select con estilo consistente

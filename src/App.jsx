@@ -18,6 +18,7 @@ import Pendientes from './pages/profesor/Pendientes.jsx'
 import Estudiantes from './pages/profesor/Estudiantes.jsx'
 import Reportes from './pages/profesor/Reportes.jsx'
 import Admin from './pages/profesor/Admin/index.jsx'
+import Coevaluaciones from './pages/profesor/Coevaluaciones.jsx'
 
 // Páginas del estudiante
 import MiGrupo from './pages/estudiante/MiGrupo.jsx'
@@ -164,6 +165,14 @@ export default function App() {
               element={
                 <RequiereProfesor>
                   <Reportes />
+                </RequiereProfesor>
+              }
+            />
+            <Route
+              path="profesor/coevaluaciones"
+              element={
+                <RequiereProfesor>
+                  <Coevaluaciones />
                 </RequiereProfesor>
               }
             />
