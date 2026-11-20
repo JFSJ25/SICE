@@ -105,7 +105,7 @@ export default function Shell() {
     )
     setContexto(ctx)
     await cargarHemisemestres(paraleloId)
-    navigate('/profesor/grupos')
+    // navigate('/profesor/grupos')
   }
 
   function seleccionarHemisemestre(hemi) {
