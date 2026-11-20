@@ -208,14 +208,14 @@ export default function Shell() {
         <aside
           className={`
             fixed top-10 bottom-0 left-0 z-[70] w-64 bg-sidebar border-r border-white/30
-            flex flex-col py-5 px-3.5 overflow-y-auto overscroll-contain
+            flex flex-col py-5 px-3.5 overflow-hidden
             transition-transform duration-300 ease-out shadow-2xl
             ${navAbierta ? 'translate-x-0' : '-translate-x-full'}
             md:top-0 md:translate-x-0
           `}
         >
           {/* Marca */}
-          <div className="flex items-center gap-2.5 px-1.5 pb-4 mb-4 border-b border-white/10">
+          <div className="flex flex-shrink-0 items-center gap-2.5 px-1.5 pb-4 mb-4 border-b border-white/10">
             <div className="w-9 h-9 rounded-lg bg-white/7 flex items-center justify-center font-display font-bold text-gold-dim text-lg flex-shrink-0">
               S
             </div>
@@ -229,7 +229,7 @@ export default function Shell() {
 
           {/* Selector de contexto — solo profesor */}
           {esStaff && paralelos.length > 0 && (
-            <div className="mb-4 p-2.5 bg-white/5 rounded-sm border border-white/8">
+            <div className="mb-4 flex-shrink-0 p-2.5 bg-white/5 rounded-sm border border-white/8">
               <label
                 htmlFor="select-paralelo"
                 className="block text-[10px] font-semibold text-white/65 uppercase tracking-wider mb-1.5"
@@ -257,7 +257,7 @@ export default function Shell() {
 
           {/* Tabs de hemisemestre */}
           {hemisemestres.length > 0 && (
-            <div className="flex gap-1 bg-white/5 rounded-sm p-0.5 mb-4">
+            <div className="flex flex-shrink-0 gap-1 bg-white/5 rounded-sm p-0.5 mb-4">
               {hemisemestres.map(h => (
                 <button
                   key={h.id}
@@ -278,7 +278,7 @@ export default function Shell() {
           )}
 
           {/* Nav principal */}
-          <nav className="flex flex-col gap-0.5 flex-1">
+          <nav className="flex flex-col gap-0.5 flex-1 min-h-0 overflow-y-auto overscroll-contain pr-1">
             {navItems.map(({ to, label, Icon }) => (
               <NavLink
                 key={to}
@@ -319,7 +319,7 @@ export default function Shell() {
           </nav>
 
           {/* Usuario */}
-          <div className="border-t border-white/10 pt-3.5 mt-2">
+          <div className="flex-shrink-0 border-t border-white/10 pt-3.5 mt-2">
             <p className="text-sm font-semibold text-white mb-0.5 truncate">
               {perfil?.nombre_completo}
             </p>
